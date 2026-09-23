@@ -1,8 +1,8 @@
 name: Deploy dashboard to GitHub Pages
 
 on:
-  # Keep deployment manual while the repository is under private review.
-  # Re-enable the main-branch push trigger when the portfolio is public.
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
