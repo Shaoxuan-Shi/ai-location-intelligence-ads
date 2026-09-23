@@ -20,7 +20,7 @@ The result is a static interactive dashboard backed by a reproducible Python pip
 
 **Portfolio highlights:** geospatial feature engineering · robust regression · leave-one-location-out validation · uncertainty communication · deterministic agent tools · product-oriented dashboard
 
-- [Open the dashboard artifact](app/dashboard_agent.html)
+- [Open the live dashboard](https://shaoxuan-shi.github.io/ai-location-intelligence-ads/)
 - [Product brief](docs/product_brief.md)
 - [Architecture](docs/architecture.md)
 - [Methodology](docs/methodology.md)
