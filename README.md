@@ -4,6 +4,8 @@ _Evidence-based site screening and campaign shortlisting for outdoor advertising
 
 > **Portfolio case study:** This repository documents the design, implementation, validation, and engineering decisions behind an end-to-end location-intelligence product.
 
+### [Launch the interactive dashboard →](https://shaoxuan-shi.github.io/ai-location-intelligence-ads/)
+
 ![V2 dashboard with candidate ranking and shortlist agent](docs/images/dashboard-v2.jpg)
 
 ## In 30 seconds
@@ -20,7 +22,6 @@ The result is a static interactive dashboard backed by a reproducible Python pip
 
 **Portfolio highlights:** geospatial feature engineering · robust regression · leave-one-location-out validation · uncertainty communication · deterministic agent tools · product-oriented dashboard
 
-- [Open the live dashboard](https://shaoxuan-shi.github.io/ai-location-intelligence-ads/)
 - [Product brief](docs/product_brief.md)
 - [Architecture](docs/architecture.md)
 - [Methodology](docs/methodology.md)
