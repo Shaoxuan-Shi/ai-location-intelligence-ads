@@ -2,6 +2,8 @@
 
 _Evidence-based site screening and campaign shortlisting for outdoor advertising in Amsterdam._
 
+> **Portfolio case study:** This repository documents the design, implementation, validation, and engineering decisions behind an end-to-end location-intelligence product.
+
 ![V2 dashboard with candidate ranking and shortlist agent](docs/images/dashboard-v2.jpg)
 
 ## In 30 seconds
@@ -140,4 +142,4 @@ This is an early-stage location decision tool, not a final media-buying or campa
 
 ## License
 
-Code is released under the [MIT License](LICENSE). Source datasets remain subject to their original provider terms.
+Original code and documentation are available for portfolio evaluation under the [Portfolio Source License](LICENSE). Third-party datasets and services remain subject to their original provider terms.
