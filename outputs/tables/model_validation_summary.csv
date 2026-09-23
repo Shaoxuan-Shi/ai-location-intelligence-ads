@@ -1,0 +1,10 @@
+metric,value,detail
+selected_model,huber_ridge_log_linear,"alpha=3.0, Huber delta=1.35; robust to a few atypical anchors"
+train_rmse_log,0.443,Fit on all 25 direction-neutral normal-week anchor medians
+loocv_rmse_log,0.567,Leave-one-anchor-out validation
+mean_baseline_loocv_rmse_log,1.506,Mean-only baseline
+ridge_benchmark_rmse_log,0.585,Same target and features without Huber's robust residual weighting
+loocv_mae_passers,59344,Average absolute error in weekly passers
+loocv_mape,53.0%,Average absolute percentage error; sensitive to low-traffic anchors
+median_held_out_percentage_error,33.2%,A typical anchor's absolute percentage miss; less dominated by Zeeburg-like low-volume cases
+loocv_rank_correlation,0.874,Whether the model preserves relative site ranking

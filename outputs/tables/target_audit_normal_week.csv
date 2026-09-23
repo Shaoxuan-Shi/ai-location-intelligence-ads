@@ -1,0 +1,26 @@
+location_name,source_sensor_count,raw_week_count,excluded_week_count,target_week_count,raw_median,target_median
+Damstraat,1,65,1,64,462728,463537
+Damrak 1-5,1,65,2,63,428660,430649
+Kalverstraat t.h.v. 1,1,65,1,64,404009,404456
+Oudekennissteeg,1,65,1,64,344997,346633
+Oudebrugsteeg,1,65,1,64,310088,312888
+Korte Niezel,1,65,1,64,303405,303472
+Oudezijds Achterburgwal t.h.v. 86,1,65,1,64,258862,259196
+Oudezijds Achterburgwal t.h.v. 91,1,65,9,56,233068,244157
+Stoofsteeg,1,65,5,60,195711,218082
+Molensteeg,1,65,1,64,204746,205158
+Oudezijds Voorburgwal t.h.v. 206,1,65,1,64,195179,195266
+CS - ri. Buiksloterweg (Oost),1,65,1,64,162061,162112
+CS - ri. Buiksloterweg (West),1,65,1,64,159165,160390
+Oudezijds Voorburgwal t.h.v. 91,1,65,1,64,103102,104055
+CS - ri. NDSM,1,65,1,64,80938,83506
+Bloedstraat,1,65,1,64,74683,74694
+Pontsteiger N (ri. NDSM),1,65,1,64,38679,39112
+CS - ri. IJplein (Oost) + CS - ri. IJplein (West),2,65,1,64,38452,38648
+Azartplein,1,65,1,64,22826,22914
+CTO Boulevard 5,1,62,3,59,19541,20220
+CTO Boulevard 4,1,62,6,56,11669,12957
+Pontsteiger Z (ri. Distelweg),1,65,1,64,11231,11236
+CTO Boulevard 3,1,60,10,50,8756,8828
+CTO Boulevard 2,1,54,12,42,8105,8428
+Zeeburg,1,64,2,62,3411,3415

@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+*.log
+
+# Public source data is reproducible but too large for the repository.
+data/raw/*
+!data/raw/.gitkeep
+
+# Local intermediates and generated diagnostic figures.
+data/interim/*
+!data/interim/.gitkeep
+outputs/figures/*.png
+
+# Per-run CLI output; reproducible model artifacts remain version controlled.
+outputs/tables/last_candidate_evaluation.json

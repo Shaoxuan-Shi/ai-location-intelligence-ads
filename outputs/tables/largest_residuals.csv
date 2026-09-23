@@ -1,0 +1,9 @@
+location_name,actual_median_weekly_passers,loocv_predicted_weekly_passers,loocv_absolute_percentage_error,actual_minus_loocv_predicted
+Zeeburg,3415,16006,368.7,-12591
+Bloedstraat,74694,197248,164.1,-122554
+Oudezijds Voorburgwal t.h.v. 91,104055,245946,136.4,-141891
+Pontsteiger Z (ri. Distelweg),11236,21603,92.3,-10367
+Pontsteiger N (ri. NDSM),39112,13125,66.4,25987
+Damstraat,463537,212242,54.2,251295
+Oudezijds Voorburgwal t.h.v. 206,195266,292909,50.0,-97643
+CS - ri. Buiksloterweg (West),160390,87021,45.7,73369

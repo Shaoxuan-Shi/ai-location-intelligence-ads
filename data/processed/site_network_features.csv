@@ -1,0 +1,27 @@
+location_name,network_reach_400m,pedestrian_route_centrality_800m,destination_route_centrality_800m,corridor_continuity_m,local_walkway_width_m,network_snap_distance_m,network_nodes_850m,network_boundary_samples
+Damstraat,26903.7,0.2269,0.257,19.4,2.84,3.5,17865,16
+Damrak 1-5,27417.0,0.2773,0.4718,10.6,3.24,10.1,15154,16
+Kalverstraat t.h.v. 1,29618.5,0.2773,0.4134,29.5,4.2,3.4,18124,16
+Oudekennissteeg,28784.2,0.2101,0.2281,17.3,1.12,1.0,16011,16
+Oudebrugsteeg,27616.4,0.2521,0.2517,10.2,1.23,0.6,16751,16
+Korte Niezel,30221.9,0.25,0.1577,19.0,1.23,2.0,16311,16
+Oudezijds Achterburgwal t.h.v. 86,26505.7,0.178,0.2206,19.0,1.5,2.2,15582,16
+Oudezijds Achterburgwal t.h.v. 91,27369.2,0.1345,0.2702,13.6,1.88,4.4,15741,16
+Molensteeg,28772.5,0.2185,0.2324,12.6,1.12,2.6,15528,16
+Stoofsteeg,27303.0,0.1765,0.2028,11.5,1.5,1.9,16430,16
+Oudezijds Voorburgwal t.h.v. 206,27416.4,0.1261,0.2,36.3,2.03,2.1,16875,16
+CS - ri. Buiksloterweg (Oost),14762.2,0.2963,0.1667,13.9,4.43,5.0,8635,11
+CS - ri. Buiksloterweg (West),15522.2,0.2955,0.364,21.2,4.43,6.2,9516,10
+Oudezijds Voorburgwal t.h.v. 91,25794.0,0.1017,0.101,4.7,1.58,2.3,15553,16
+CS - ri. NDSM,15071.7,0.2444,0.305,40.8,4.56,3.3,9327,10
+Bloedstraat,30160.1,0.2605,0.2587,10.4,3.3,4.0,15495,16
+CS - ri. IJplein (Oost),9906.1,0.2222,0.195,21.1,9.69,8.2,6356,11
+Pontsteiger N (ri. NDSM),10058.8,0.1481,0.1246,6.1,4.33,4.7,6991,11
+Azartplein,9766.3,0.2105,0.1292,47.9,3.15,43.9,4581,7
+CS - ri. IJplein (West),9906.1,0.2222,0.195,21.1,9.69,8.2,6356,11
+CTO Boulevard 5,18569.5,0.3559,0.4059,18.4,12.64,4.0,7022,16
+CTO Boulevard 4,16490.4,0.219,0.1866,8.0,11.45,5.1,5402,15
+Pontsteiger Z (ri. Distelweg),10419.4,0.1481,0.1191,2.4,4.73,8.4,7035,11
+CTO Boulevard 3,16299.2,0.2212,0.2,24.5,15.69,5.6,5225,15
+CTO Boulevard 2,15747.1,0.3974,0.3885,29.2,8.34,7.1,4250,13
+Zeeburg,8864.0,0.0,0.0932,16.2,4.27,4.4,4112,7

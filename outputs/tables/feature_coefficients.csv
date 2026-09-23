@@ -1,0 +1,12 @@
+term,coefficient_log_scale,feature_mean_transformed,feature_std_transformed
+intercept,11.344977989785097,,
+shop_count_80m,0.1531,1.7996,1.2922
+horeca_count_120m,-0.0358,2.234,1.5503
+transit_stop_count_250m,0.2466,1.9125,1.1652
+distance_to_nearest_transit_m,-0.1593,4.3919,1.1898
+tourism_poi_count_300m,0.2513,3.1051,1.1729
+in_official_shopping_area,-0.251,0.28,0.449
+high_street_shop_count_120m,0.2896,1.3266,1.2526
+in_key_shopping_area,0.2005,0.12,0.325
+lodging_count_500m,0.4602,3.205,1.3117
+horeca_count_200m,0.2131,3.3171,1.557

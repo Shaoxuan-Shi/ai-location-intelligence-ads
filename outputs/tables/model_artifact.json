@@ -1,0 +1,638 @@
+{
+  "model": "huber_ridge_log_linear",
+  "target": "direction_neutral_normal_week_median",
+  "target_column": "weekly_passers",
+  "target_transform": "log1p",
+  "alpha": 3.0,
+  "huber_delta": 1.35,
+  "rmse_log_fit": 0.44262665335871115,
+  "interval_log_margin": 0.6791752609624556,
+  "interval_method": "80th percentile absolute LOOCV log residual",
+  "coefficients": [
+    11.344977989785097,
+    0.15308802918592712,
+    -0.03579260602634377,
+    0.24655400447805415,
+    -0.15927839922570466,
+    0.25125590456860736,
+    -0.2510466710122017,
+    0.2896363202651161,
+    0.2005165448877774,
+    0.4601641106909778,
+    0.21305257677217898
+  ],
+  "features": [
+    {
+      "name": "shop_count_80m",
+      "mean": 1.7995639926117593,
+      "std": 1.2922144631710735,
+      "transform": "log1p"
+    },
+    {
+      "name": "horeca_count_120m",
+      "mean": 2.2340400721812235,
+      "std": 1.5502555614660003,
+      "transform": "log1p"
+    },
+    {
+      "name": "transit_stop_count_250m",
+      "mean": 1.9125350611125433,
+      "std": 1.1652314917260767,
+      "transform": "log1p"
+    },
+    {
+      "name": "distance_to_nearest_transit_m",
+      "mean": 4.391892497715975,
+      "std": 1.1897914502650955,
+      "transform": "log1p"
+    },
+    {
+      "name": "tourism_poi_count_300m",
+      "mean": 3.1051190738552488,
+      "std": 1.172919872979988,
+      "transform": "log1p"
+    },
+    {
+      "name": "in_official_shopping_area",
+      "mean": 0.28,
+      "std": 0.44899888641287294,
+      "transform": "identity"
+    },
+    {
+      "name": "high_street_shop_count_120m",
+      "mean": 1.326603943318579,
+      "std": 1.252629668830373,
+      "transform": "log1p"
+    },
+    {
+      "name": "in_key_shopping_area",
+      "mean": 0.12,
+      "std": 0.32496153618543844,
+      "transform": "identity"
+    },
+    {
+      "name": "lodging_count_500m",
+      "mean": 3.2049519089132144,
+      "std": 1.3117220165670098,
+      "transform": "log1p"
+    },
+    {
+      "name": "horeca_count_200m",
+      "mean": 3.3170744504835374,
+      "std": 1.5569886270466147,
+      "transform": "log1p"
+    }
+  ],
+  "training_rows": [
+    {
+      "location_name": "Damstraat",
+      "lat": 52.371932,
+      "lon": 4.895603,
+      "weekly_passers": 463537.0,
+      "variability_ratio": 0.252,
+      "nearest_anchor_distance_m": 118.5,
+      "nearest_anchor_name": "Oudezijds Voorburgwal t.h.v. 206",
+      "raw_features": {
+        "shop_count_80m": 28.0,
+        "horeca_count_120m": 46.0,
+        "transit_stop_count_250m": 4.0,
+        "distance_to_nearest_transit_m": 173.2,
+        "tourism_poi_count_300m": 48.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 18.0,
+        "in_key_shopping_area": 1.0,
+        "lodging_count_500m": 70.0,
+        "horeca_count_200m": 72.0,
+        "nearby_anchor_median_passers": 223705.0
+      }
+    },
+    {
+      "location_name": "Damrak 1-5",
+      "lat": 52.377016,
+      "lon": 4.898084,
+      "weekly_passers": 430649.0,
+      "variability_ratio": 0.404,
+      "nearest_anchor_distance_m": 189.5,
+      "nearest_anchor_name": "Oudebrugsteeg",
+      "raw_features": {
+        "shop_count_80m": 17.0,
+        "horeca_count_120m": 14.0,
+        "transit_stop_count_250m": 25.0,
+        "distance_to_nearest_transit_m": 121.4,
+        "tourism_poi_count_300m": 90.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 16.0,
+        "in_key_shopping_area": 1.0,
+        "lodging_count_500m": 78.0,
+        "horeca_count_200m": 109.0,
+        "nearby_anchor_median_passers": 217114.0
+      }
+    },
+    {
+      "location_name": "Kalverstraat t.h.v. 1",
+      "lat": 52.372636,
+      "lon": 4.892074,
+      "weekly_passers": 404456.0,
+      "variability_ratio": 0.238,
+      "nearest_anchor_distance_m": 252.0,
+      "nearest_anchor_name": "Damstraat",
+      "raw_features": {
+        "shop_count_80m": 26.0,
+        "horeca_count_120m": 21.0,
+        "transit_stop_count_250m": 20.0,
+        "distance_to_nearest_transit_m": 57.3,
+        "tourism_poi_count_300m": 49.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 29.0,
+        "in_key_shopping_area": 1.0,
+        "lodging_count_500m": 75.0,
+        "horeca_count_200m": 79.0,
+        "nearby_anchor_median_passers": 237138.0
+      }
+    },
+    {
+      "location_name": "Oudekennissteeg",
+      "lat": 52.373862,
+      "lon": 4.898693,
+      "weekly_passers": 346633.0,
+      "variability_ratio": 0.166,
+      "nearest_anchor_distance_m": 50.5,
+      "nearest_anchor_name": "Oudezijds Voorburgwal t.h.v. 91",
+      "raw_features": {
+        "shop_count_80m": 16.0,
+        "horeca_count_120m": 44.0,
+        "transit_stop_count_250m": 2.0,
+        "distance_to_nearest_transit_m": 241.8,
+        "tourism_poi_count_300m": 72.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 9.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 80.0,
+        "horeca_count_200m": 142.0,
+        "nearby_anchor_median_passers": 217312.0
+      }
+    },
+    {
+      "location_name": "Oudebrugsteeg",
+      "lat": 52.375352,
+      "lon": 4.897483,
+      "weekly_passers": 312888.0,
+      "variability_ratio": 0.235,
+      "nearest_anchor_distance_m": 179.2,
+      "nearest_anchor_name": "Korte Niezel",
+      "raw_features": {
+        "shop_count_80m": 22.0,
+        "horeca_count_120m": 78.0,
+        "transit_stop_count_250m": 4.0,
+        "distance_to_nearest_transit_m": 151.6,
+        "tourism_poi_count_300m": 90.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 14.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 88.0,
+        "horeca_count_200m": 161.0,
+        "nearby_anchor_median_passers": 241767.0
+      }
+    },
+    {
+      "location_name": "Korte Niezel",
+      "lat": 52.374618,
+      "lon": 4.899833,
+      "weekly_passers": 303472.0,
+      "variability_ratio": 0.267,
+      "nearest_anchor_distance_m": 114.3,
+      "nearest_anchor_name": "Oudekennissteeg",
+      "raw_features": {
+        "shop_count_80m": 23.0,
+        "horeca_count_120m": 65.0,
+        "transit_stop_count_250m": 0.0,
+        "distance_to_nearest_transit_m": 264.3,
+        "tourism_poi_count_300m": 78.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 20.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 75.0,
+        "horeca_count_200m": 186.0,
+        "nearby_anchor_median_passers": 232065.0
+      }
+    },
+    {
+      "location_name": "Oudezijds Achterburgwal t.h.v. 86",
+      "lat": 52.372918,
+      "lon": 4.89821,
+      "weekly_passers": 259196.0,
+      "variability_ratio": 0.185,
+      "nearest_anchor_distance_m": 32.1,
+      "nearest_anchor_name": "Oudezijds Achterburgwal t.h.v. 91",
+      "raw_features": {
+        "shop_count_80m": 13.0,
+        "horeca_count_120m": 24.0,
+        "transit_stop_count_250m": 2.0,
+        "distance_to_nearest_transit_m": 198.3,
+        "tourism_poi_count_300m": 51.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 9.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 72.0,
+        "horeca_count_200m": 96.0,
+        "nearby_anchor_median_passers": 221933.0
+      }
+    },
+    {
+      "location_name": "Oudezijds Achterburgwal t.h.v. 91",
+      "lat": 52.37263,
+      "lon": 4.898236,
+      "weekly_passers": 244157.0,
+      "variability_ratio": 0.242,
+      "nearest_anchor_distance_m": 32.1,
+      "nearest_anchor_name": "Oudezijds Achterburgwal t.h.v. 86",
+      "raw_features": {
+        "shop_count_80m": 15.0,
+        "horeca_count_120m": 25.0,
+        "transit_stop_count_250m": 4.0,
+        "distance_to_nearest_transit_m": 184.5,
+        "tourism_poi_count_300m": 52.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 9.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 68.0,
+        "horeca_count_200m": 87.0,
+        "nearby_anchor_median_passers": 224588.0
+      }
+    },
+    {
+      "location_name": "Stoofsteeg",
+      "lat": 52.372441,
+      "lon": 4.897692,
+      "weekly_passers": 218082.0,
+      "variability_ratio": 0.472,
+      "nearest_anchor_distance_m": 42.5,
+      "nearest_anchor_name": "Oudezijds Achterburgwal t.h.v. 91",
+      "raw_features": {
+        "shop_count_80m": 19.0,
+        "horeca_count_120m": 20.0,
+        "transit_stop_count_250m": 3.0,
+        "distance_to_nearest_transit_m": 215.4,
+        "tourism_poi_count_300m": 51.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 11.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 66.0,
+        "horeca_count_200m": 88.0,
+        "nearby_anchor_median_passers": 236379.0
+      }
+    },
+    {
+      "location_name": "Molensteeg",
+      "lat": 52.373589,
+      "lon": 4.899818,
+      "weekly_passers": 205158.0,
+      "variability_ratio": 0.187,
+      "nearest_anchor_distance_m": 82.2,
+      "nearest_anchor_name": "Oudekennissteeg",
+      "raw_features": {
+        "shop_count_80m": 24.0,
+        "horeca_count_120m": 48.0,
+        "transit_stop_count_250m": 2.0,
+        "distance_to_nearest_transit_m": 177.1,
+        "tourism_poi_count_300m": 59.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 5.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 69.0,
+        "horeca_count_200m": 115.0,
+        "nearby_anchor_median_passers": 231182.0
+      }
+    },
+    {
+      "location_name": "Oudezijds Voorburgwal t.h.v. 206",
+      "lat": 52.372784,
+      "lon": 4.896652,
+      "weekly_passers": 195266.0,
+      "variability_ratio": 0.207,
+      "nearest_anchor_distance_m": 80.2,
+      "nearest_anchor_name": "Stoofsteeg",
+      "raw_features": {
+        "shop_count_80m": 14.0,
+        "horeca_count_120m": 16.0,
+        "transit_stop_count_250m": 6.0,
+        "distance_to_nearest_transit_m": 219.3,
+        "tourism_poi_count_300m": 59.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 15.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 76.0,
+        "horeca_count_200m": 87.0,
+        "nearby_anchor_median_passers": 250365.0
+      }
+    },
+    {
+      "location_name": "CS - ri. Buiksloterweg (Oost)",
+      "lat": 52.380511,
+      "lon": 4.899532,
+      "weekly_passers": 162112.0,
+      "variability_ratio": 0.624,
+      "nearest_anchor_distance_m": 12.5,
+      "nearest_anchor_name": "CS - ri. Buiksloterweg (West)",
+      "raw_features": {
+        "shop_count_80m": 2.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 57.0,
+        "distance_to_nearest_transit_m": 14.9,
+        "tourism_poi_count_300m": 15.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 31.0,
+        "horeca_count_200m": 10.0,
+        "nearby_anchor_median_passers": 173053.0
+      }
+    },
+    {
+      "location_name": "CS - ri. Buiksloterweg (West)",
+      "lat": 52.380562,
+      "lon": 4.899368,
+      "weekly_passers": 160390.0,
+      "variability_ratio": 0.303,
+      "nearest_anchor_distance_m": 12.5,
+      "nearest_anchor_name": "CS - ri. Buiksloterweg (Oost)",
+      "raw_features": {
+        "shop_count_80m": 1.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 53.0,
+        "distance_to_nearest_transit_m": 17.1,
+        "tourism_poi_count_300m": 14.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 29.0,
+        "horeca_count_200m": 9.0,
+        "nearby_anchor_median_passers": 173430.0
+      }
+    },
+    {
+      "location_name": "Oudezijds Voorburgwal t.h.v. 91",
+      "lat": 52.37354,
+      "lon": 4.898169,
+      "weekly_passers": 104055.0,
+      "variability_ratio": 0.295,
+      "nearest_anchor_distance_m": 50.5,
+      "nearest_anchor_name": "Oudekennissteeg",
+      "raw_features": {
+        "shop_count_80m": 19.0,
+        "horeca_count_120m": 23.0,
+        "transit_stop_count_250m": 4.0,
+        "distance_to_nearest_transit_m": 238.0,
+        "tourism_poi_count_300m": 67.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 5.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 80.0,
+        "horeca_count_200m": 127.0,
+        "nearby_anchor_median_passers": 250871.0
+      }
+    },
+    {
+      "location_name": "CS - ri. NDSM",
+      "lat": 52.380675,
+      "lon": 4.899052,
+      "weekly_passers": 83506.0,
+      "variability_ratio": 0.312,
+      "nearest_anchor_distance_m": 24.9,
+      "nearest_anchor_name": "CS - ri. Buiksloterweg (West)",
+      "raw_features": {
+        "shop_count_80m": 1.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 45.0,
+        "distance_to_nearest_transit_m": 21.2,
+        "tourism_poi_count_300m": 13.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 25.0,
+        "horeca_count_200m": 5.0,
+        "nearby_anchor_median_passers": 193816.0
+      }
+    },
+    {
+      "location_name": "Bloedstraat",
+      "lat": 52.372766,
+      "lon": 4.899832,
+      "weekly_passers": 74694.0,
+      "variability_ratio": 0.233,
+      "nearest_anchor_distance_m": 91.5,
+      "nearest_anchor_name": "Molensteeg",
+      "raw_features": {
+        "shop_count_80m": 17.0,
+        "horeca_count_120m": 46.0,
+        "transit_stop_count_250m": 5.0,
+        "distance_to_nearest_transit_m": 98.4,
+        "tourism_poi_count_300m": 38.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 2.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 64.0,
+        "horeca_count_200m": 80.0,
+        "nearby_anchor_median_passers": 241905.0
+      }
+    },
+    {
+      "location_name": "Pontsteiger N (ri. NDSM)",
+      "lat": 52.392145,
+      "lon": 4.885864,
+      "weekly_passers": 39112.0,
+      "variability_ratio": 0.411,
+      "nearest_anchor_distance_m": 16.0,
+      "nearest_anchor_name": "Pontsteiger Z (ri. Distelweg)",
+      "raw_features": {
+        "shop_count_80m": 0.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 6.0,
+        "distance_to_nearest_transit_m": 11.8,
+        "tourism_poi_count_300m": 1.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 3.0,
+        "horeca_count_200m": 1.0,
+        "nearby_anchor_median_passers": 94967.0
+      }
+    },
+    {
+      "location_name": "CS - ri. IJplein (direction-neutral)",
+      "lat": 52.378528,
+      "lon": 4.905814,
+      "weekly_passers": 38648.0,
+      "variability_ratio": 0.636,
+      "nearest_anchor_distance_m": 480.0,
+      "nearest_anchor_name": "CS - ri. Buiksloterweg (Oost)",
+      "raw_features": {
+        "shop_count_80m": 0.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 8.0,
+        "distance_to_nearest_transit_m": 19.0,
+        "tourism_poi_count_300m": 12.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 12.0,
+        "horeca_count_200m": 2.0,
+        "nearby_anchor_median_passers": 218265.0
+      }
+    },
+    {
+      "location_name": "Azartplein",
+      "lat": 52.378104,
+      "lon": 4.937284,
+      "weekly_passers": 22914.0,
+      "variability_ratio": 0.42,
+      "nearest_anchor_distance_m": 930.1,
+      "nearest_anchor_name": "Zeeburg",
+      "raw_features": {
+        "shop_count_80m": 0.0,
+        "horeca_count_120m": 2.0,
+        "transit_stop_count_250m": 7.0,
+        "distance_to_nearest_transit_m": 9.2,
+        "tourism_poi_count_300m": 4.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 1.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 1.0,
+        "horeca_count_200m": 4.0,
+        "nearby_anchor_median_passers": 174779.0
+      }
+    },
+    {
+      "location_name": "CTO Boulevard 5",
+      "lat": 52.312466,
+      "lon": 4.945929,
+      "weekly_passers": 20220.0,
+      "variability_ratio": 0.682,
+      "nearest_anchor_distance_m": 131.9,
+      "nearest_anchor_name": "CTO Boulevard 4",
+      "raw_features": {
+        "shop_count_80m": 2.0,
+        "horeca_count_120m": 8.0,
+        "transit_stop_count_250m": 36.0,
+        "distance_to_nearest_transit_m": 74.2,
+        "tourism_poi_count_300m": 6.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 4.0,
+        "horeca_count_200m": 18.0,
+        "nearby_anchor_median_passers": 37909.0
+      }
+    },
+    {
+      "location_name": "CTO Boulevard 4",
+      "lat": 52.312612,
+      "lon": 4.944004,
+      "weekly_passers": 12957.0,
+      "variability_ratio": 0.727,
+      "nearest_anchor_distance_m": 53.2,
+      "nearest_anchor_name": "CTO Boulevard 3",
+      "raw_features": {
+        "shop_count_80m": 2.0,
+        "horeca_count_120m": 12.0,
+        "transit_stop_count_250m": 9.0,
+        "distance_to_nearest_transit_m": 204.7,
+        "tourism_poi_count_300m": 11.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 5.0,
+        "horeca_count_200m": 15.0,
+        "nearby_anchor_median_passers": 30655.0
+      }
+    },
+    {
+      "location_name": "Pontsteiger Z (ri. Distelweg)",
+      "lat": 52.392031,
+      "lon": 4.886008,
+      "weekly_passers": 11236.0,
+      "variability_ratio": 0.38,
+      "nearest_anchor_distance_m": 16.0,
+      "nearest_anchor_name": "Pontsteiger N (ri. NDSM)",
+      "raw_features": {
+        "shop_count_80m": 0.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 6.0,
+        "distance_to_nearest_transit_m": 12.2,
+        "tourism_poi_count_300m": 1.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 3.0,
+        "horeca_count_200m": 2.0,
+        "nearby_anchor_median_passers": 111382.0
+      }
+    },
+    {
+      "location_name": "CTO Boulevard 3",
+      "lat": 52.312688,
+      "lon": 4.943232,
+      "weekly_passers": 8828.0,
+      "variability_ratio": 0.826,
+      "nearest_anchor_distance_m": 53.2,
+      "nearest_anchor_name": "CTO Boulevard 4",
+      "raw_features": {
+        "shop_count_80m": 1.0,
+        "horeca_count_120m": 9.0,
+        "transit_stop_count_250m": 0.0,
+        "distance_to_nearest_transit_m": 257.5,
+        "tourism_poi_count_300m": 9.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 5.0,
+        "horeca_count_200m": 15.0,
+        "nearby_anchor_median_passers": 32233.0
+      }
+    },
+    {
+      "location_name": "CTO Boulevard 2",
+      "lat": 52.312958,
+      "lon": 4.940889,
+      "weekly_passers": 8428.0,
+      "variability_ratio": 0.574,
+      "nearest_anchor_distance_m": 162.1,
+      "nearest_anchor_name": "CTO Boulevard 3",
+      "raw_features": {
+        "shop_count_80m": 1.0,
+        "horeca_count_120m": 10.0,
+        "transit_stop_count_250m": 0.0,
+        "distance_to_nearest_transit_m": 345.3,
+        "tourism_poi_count_300m": 10.0,
+        "in_official_shopping_area": 1.0,
+        "high_street_shop_count_120m": 1.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 4.0,
+        "horeca_count_200m": 15.0,
+        "nearby_anchor_median_passers": 43762.0
+      }
+    },
+    {
+      "location_name": "Zeeburg",
+      "lat": 52.374416,
+      "lon": 4.949582,
+      "weekly_passers": 3415.0,
+      "variability_ratio": 0.334,
+      "nearest_anchor_distance_m": 930.1,
+      "nearest_anchor_name": "Azartplein",
+      "raw_features": {
+        "shop_count_80m": 0.0,
+        "horeca_count_120m": 0.0,
+        "transit_stop_count_250m": 1.0,
+        "distance_to_nearest_transit_m": 16.4,
+        "tourism_poi_count_300m": 3.0,
+        "in_official_shopping_area": 0.0,
+        "high_street_shop_count_120m": 0.0,
+        "in_key_shopping_area": 0.0,
+        "lodging_count_500m": 2.0,
+        "horeca_count_200m": 0.0,
+        "nearby_anchor_median_passers": 168821.0
+      }
+    }
+  ]
+}

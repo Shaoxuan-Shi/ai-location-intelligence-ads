@@ -1,0 +1,13 @@
+target_variant,model,anchors,mae,mape_pct,rmse_log,rank_correlation,most_selected_alpha_extra,selection_frequency
+direction_neutral_normal_week_minus_short_nearby_roadworks,huber_ridge,25,57446.9294,52.7339,0.5641,0.8777,3/1.35,25
+direction_neutral_normal_week_medians,huber_ridge,25,59344.1454,53.0092,0.5675,0.8738,3/1.35,25
+direction_neutral_co_located_medians,huber_ridge,25,59087.543,52.7601,0.5688,0.87,3/1.35,25
+direction_neutral_normal_week_minus_short_nearby_roadworks,ridge,25,61782.9937,53.7096,0.5825,0.8546,3/0,25
+direction_neutral_co_located_medians,ridge,25,62133.0953,53.9466,0.5853,0.8423,3/0,25
+direction_neutral_normal_week_medians,ridge,25,63373.6318,54.2676,0.5853,0.8485,3/0,25
+current_directional_sensor_medians,ridge,26,61386.9496,55.0603,0.5904,0.8578,3/0,26
+direction_neutral_normal_week_minus_short_nearby_roadworks,stability_weighted_ridge,25,62552.411,54.9168,0.5914,0.8515,3/1,25
+direction_neutral_normal_week_medians,stability_weighted_ridge,25,64598.4134,55.6031,0.5938,0.8362,3/1,25
+direction_neutral_co_located_medians,stability_weighted_ridge,25,63713.4048,55.6964,0.5959,0.8408,3/1,25
+current_directional_sensor_medians,huber_ridge,26,60870.736,56.989,0.5959,0.8626,3/1.35,26
+current_directional_sensor_medians,stability_weighted_ridge,26,62938.7905,56.443,0.5991,0.8544,3/1,26
