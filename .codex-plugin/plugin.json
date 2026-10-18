@@ -1,0 +1,27 @@
+{
+  "name": "ai-location-intelligence-ads",
+  "version": "0.1.0",
+  "description": "Deterministic Amsterdam OOH location evaluation, reliability explanation, and campaign shortlisting.",
+  "author": {
+    "name": "Shaoxuan Shi",
+    "url": "https://github.com/Shaoxuan-Shi"
+  },
+  "homepage": "https://shaoxuan-shi.github.io/ai-location-intelligence-ads/",
+  "repository": "https://github.com/Shaoxuan-Shi/ai-location-intelligence-ads",
+  "license": "Portfolio Source License",
+  "keywords": ["location-intelligence", "footfall", "out-of-home", "amsterdam"],
+  "skills": "./.agents/skills/",
+  "interface": {
+    "displayName": "Amsterdam OOH Location Intelligence",
+    "shortDescription": "Evaluate and shortlist Amsterdam advertising locations.",
+    "longDescription": "Use deterministic footfall estimates, reliability evidence, and transparent campaign rules to prioritize Amsterdam OOH candidates for field validation.",
+    "developerName": "Shaoxuan Shi",
+    "category": "Productivity",
+    "capabilities": [],
+    "websiteURL": "https://shaoxuan-shi.github.io/ai-location-intelligence-ads/",
+    "defaultPrompt": [
+      "Evaluate an Amsterdam OOH candidate coordinate.",
+      "Build a strict tourism shortlist of three locations."
+    ]
+  }
+}

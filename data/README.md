@@ -22,6 +22,8 @@ The core pipeline then writes processed datasets and compact model outputs:
 make rebuild
 ```
 
+For offline candidate evaluation without the raw cache, use the committed compact runtime bundle at `outputs/runtime/runtime_bundle.json`. It is generated from the same context embedded in the static dashboard and includes explicit schema, model, geography, and data-date metadata.
+
 ## Sources
 
 - Amsterdam Crowdmonitor weekly pedestrian counts from the [Amsterdam Open Data API](https://api.data.amsterdam.nl/v1)

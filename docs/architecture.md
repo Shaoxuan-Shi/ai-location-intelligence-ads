@@ -8,15 +8,20 @@ flowchart LR
     fetch --> features["Location feature pipeline"]
     features --> experiments["Target and feature experiments"]
     experiments --> model["Huber-Ridge model artifact"]
-    model --> evaluator["Candidate evaluator"]
+    model --> bundle["Versioned runtime bundle"]
+    bundle --> evaluator["Deterministic candidate evaluator"]
     evaluator --> evidence["Prediction and reliability evidence"]
     evidence --> rules["Campaign eligibility rules"]
     rules --> dashboard["Static shortlist dashboard"]
+    rules --> cli["JSON CLI"]
+    cli --> skill["ZAP location-intelligence skill"]
 ```
 
 ## Runtime boundary
 
-The published dashboard is a static application. Model coefficients, compact location features, validation evidence, and shortlist rules are bundled into the generated HTML. A live model server is not required. Internet access is used only for map libraries and basemap tiles.
+The published dashboard remains a static application. Model coefficients, compact location features, validation evidence, and shortlist rules are bundled into the generated HTML. The same generated context is also written to `outputs/runtime/runtime_bundle.json`, allowing the Python runtime, CLI, and skill to evaluate locations without the excluded 198 MB raw-data cache. A live model server is not required. Internet access is used only for map libraries and basemap tiles.
+
+The browser and Python implementations are checked against golden coordinates and shortlist fixtures in CI. This cross-runtime contract prevents the static dashboard and agent-facing tools from silently diverging.
 
 ## Main components
 
@@ -28,7 +33,11 @@ The published dashboard is a static application. Model coefficients, compact loc
 | `src/feature_experiments.py` | Compare candidate feature sets |
 | `src/model_weekly_passers.py` | Train, validate, and serialize the selected model |
 | `src/evaluate_location.py` | Apply the same feature and model logic to a new coordinate |
+| `src/runtime_engine.py` | Evaluate a coordinate from the compact versioned runtime bundle |
+| `src/shortlist.py` | Apply shared campaign eligibility and exposure-ranking rules |
+| `src/agent_cli.py` | Expose deterministic evaluation and shortlisting as structured JSON |
 | `src/generate_dashboard.py` | Generate the self-contained product dashboard |
+| `.agents/skills/zap-location-intelligence/` | Teach an agent when and how to invoke the deterministic tools |
 
 ## Decision boundary
 

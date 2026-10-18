@@ -1,7 +1,7 @@
 PYTHON ?= python3
 PORT ?= 8767
 
-.PHONY: serve check test verify fetch rebuild pipeline
+.PHONY: serve check test verify fetch runtime rebuild pipeline
 
 serve:
 	$(PYTHON) -m http.server $(PORT) --bind 127.0.0.1 --directory app
@@ -16,6 +16,9 @@ verify: check test
 
 fetch:
 	$(PYTHON) src/fetch_data.py
+
+runtime:
+	$(PYTHON) src/export_runtime_bundle.py
 
 rebuild: check
 	$(PYTHON) src/build_features.py

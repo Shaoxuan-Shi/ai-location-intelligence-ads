@@ -1,151 +1,253 @@
 from __future__ import annotations
 
+import argparse
+from datetime import date
+import json
 import re
-import sys
 from typing import Any
 
-from evaluate_location import evaluate_candidate
-from utils import OUTPUT_TABLES, read_csv, safe_float
+from runtime_engine import evaluate_location, load_runtime_bundle
+from shortlist import build_shortlist, evidence_reasons, normalize_brief, parse_campaign_brief
 
 
-def objective_from_query(query: str) -> str:
-    q = query.lower()
-    if any(word in q for word in ["shopping", "retail", "shop", "store", "fashion"]):
-        return "shopping"
-    if any(word in q for word in ["tourist", "tourism", "visitor", "museum", "hotel"]):
-        return "tourism"
-    if any(word in q for word in ["commuter", "transit", "station", "metro", "tram"]):
-        return "commuter"
-    return "general"
+UNSUPPORTED_PATTERNS = {
+    "media_buying_decision": r"\b(?:buy|purchase|approve|book|proceed)\b|直接购买|购买|批准|下单|投放",
+    "price_or_cpm": r"\b(?:cpm|price|pricing|cost)\b|价格|成本|千次展示",
+    "campaign_roi": r"\b(?:roi|return on investment|conversion|campaign lift)\b|投资回报|回报率|转化|广告效果",
+    "inventory_availability": r"\b(?:inventory|availability|available screen|vacancy)\b|库存|可售|档期|空位",
+    "live_or_hourly_traffic": r"\b(?:live|right now|real[ -]?time|hourly traffic|traffic now)\b|实时|现在人流|当前人流|小时级|每小时",
+    "audience_demographics": r"\b(?:demographic|audience profile|age group)\b|人口属性|人群画像|受众画像",
+    "screen_visibility": r"\b(?:screen visibility|orientation|sight ?line|obstruction)\b|屏幕可见|屏幕朝向|视线|遮挡",
+}
+
+MISSING_INPUTS = {
+    "media_buying_decision": ["price and contract terms", "inventory availability", "screen-level field validation"],
+    "price_or_cpm": ["media price", "booked impressions or a defensible exposure denominator"],
+    "campaign_roi": ["campaign cost", "conversion outcome", "causal measurement design"],
+    "inventory_availability": ["current ZAP inventory and booking calendar"],
+    "live_or_hourly_traffic": ["current or hourly pedestrian-count feed"],
+    "audience_demographics": ["privacy-safe audience or survey data"],
+    "screen_visibility": ["screen orientation, sight line, obstruction, and viewing-distance observations"],
+}
 
 
-def score(row: dict[str, Any], objective: str) -> float:
-    predicted = safe_float(row["predicted_weekly_passers"])
-    if objective == "shopping":
-        return predicted * (0.70 + safe_float(row["shop_count_80m_percentile"]) / 250 + safe_float(row["horeca_count_120m_percentile"]) / 500)
-    if objective == "tourism":
-        return predicted * (0.70 + safe_float(row["tourism_poi_count_300m_percentile"]) / 220 + safe_float(row["shop_count_80m_percentile"]) / 600)
-    if objective == "commuter":
-        return predicted * (0.70 + safe_float(row["transit_stop_count_250m_percentile"]) / 220)
-    return predicted
+def unsupported_fields(query: str) -> list[str]:
+    return [name for name, pattern in UNSUPPORTED_PATTERNS.items() if re.search(pattern, query.lower())]
 
 
-def row_value(row: dict[str, Any], key: str) -> float:
-    return safe_float(row.get(key))
-
-
-def evidence(row: dict[str, Any], objective: str = "general") -> str:
-    parts = []
-    if row_value(row, "shop_count_80m_percentile") >= 75:
-        parts.append("strong retail-density percentile")
-    if row_value(row, "horeca_count_120m_percentile") >= 75:
-        parts.append("strong horeca context")
-    if row_value(row, "transit_stop_count_250m_percentile") >= 75:
-        parts.append("strong transit accessibility")
-    if row_value(row, "tourism_poi_count_300m_percentile") >= 75:
-        parts.append("strong tourism context")
-    area = row.get("shopping_area_name", "")
-    if area:
-        parts.append(f"inside official shopping area: {area}")
-    if not parts:
-        parts.append("no single contextual signal is top-quartile against current anchors")
-    if objective != "general":
-        parts.append(f"matches {objective} objective")
-    return "; ".join(parts)
-
-
-def print_location_answer(row: dict[str, Any], name: str | None = None) -> None:
-    title = name or row.get("location_name", "Candidate location")
-    predicted = round(row_value(row, "predicted_weekly_passers"))
-    low = round(row_value(row, "prediction_low"))
-    high = round(row_value(row, "prediction_high"))
-    width_ratio = row_value(row, "interval_width_ratio")
-    similar_error = row_value(row, "similar_anchor_validation_error")
-    if not similar_error:
-        similar_error = row_value(row, "loocv_absolute_percentage_error")
-    variability = row_value(row, "comparable_anchor_variability")
-    if not variability:
-        variability = row_value(row, "variability_ratio")
-    outside_count = round(row_value(row, "outside_feature_count"))
-    support_count = round(row_value(row, "feature_support_count"))
-    support_threshold = row_value(row, "feature_support_threshold")
-    joint_similarity = row_value(row, "joint_feature_similarity_percentile")
-    print(title)
-    print(f"Predicted typical weekly passers: {predicted:,} ({low:,}-{high:,})")
-    print("Reliability evidence:")
-    if row.get("comparable_anchors"):
-        nearest_feature_distance = row_value(row["comparable_anchors"][0], "feature_distance")
-        print(
-            f"  Comparable-anchor support: nearest feature distance {nearest_feature_distance:.2f}; "
-            f"{support_count} anchors within the typical threshold {support_threshold:.2f}"
-        )
-    print(f"  Similar-anchor held-out error: {similar_error:.1f}%")
-    print(f"  Historical weekly spread: {variability * 100:.0f}% of median")
-    print(
-        f"  Training range check: {outside_count} model inputs outside range; "
-        f"joint similarity stronger than {joint_similarity:.0f}% of training nearest matches"
-    )
-    print(f"Evidence: {evidence(row)}")
-    if "comparable_anchors" in row:
-        comparable = ", ".join(
-            f"{item['location_name']} ({round(item['weekly_passers']):,})" for item in row["comparable_anchors"]
-        )
-        print(f"Comparable anchors: {comparable}")
-    elif row.get("loocv_absolute_percentage_error"):
-        print(f"LOOCV error for this anchor: {row['loocv_absolute_percentage_error']}%")
-    if width_ratio > 1.5 or similar_error > 75 or variability > 0.45 or outside_count > 0:
-        print("Recommendation: use for early shortlisting only; field validation is strongly recommended.")
-    else:
-        print("Recommendation: suitable for shortlisting; validate before final media buying.")
+def unsupported_response(query: str, bundle: dict[str, Any]) -> dict[str, Any] | None:
+    fields = unsupported_fields(query)
+    if not fields:
+        return None
+    missing = []
+    for field in fields:
+        for item in MISSING_INPUTS[field]:
+            if item not in missing:
+                missing.append(item)
+    return {
+        "kind": "unsupported_decision",
+        "decision_status": "not_buy_ready",
+        "boundary": "The current model cannot answer this request and no estimate or shortlist was generated.",
+        "unsupported_fields": fields,
+        "missing_inputs": missing,
+        "allowed_next_steps": [
+            "Use the model only to prioritize candidates for field validation.",
+            "Collect the missing operational inputs before making a media-buying decision.",
+            "Use a current pedestrian-count source for live or hourly traffic questions.",
+        ],
+        "runtime": bundle.get("runtime", {}),
+    }
 
 
 def extract_lat_lon(query: str) -> tuple[float, float] | None:
     numbers = [float(item) for item in re.findall(r"-?\d+\.\d+", query)]
-    for i in range(len(numbers) - 1):
-        lat, lon = numbers[i], numbers[i + 1]
+    for index in range(len(numbers) - 1):
+        lat, lon = numbers[index], numbers[index + 1]
         if 52.0 <= lat <= 52.6 and 4.5 <= lon <= 5.3:
             return lat, lon
     return None
 
 
-def find_anchor(query: str, rows: list[dict[str, str]]) -> dict[str, str] | None:
+def find_anchor(query: str, anchors: list[dict[str, Any]]) -> dict[str, Any] | None:
     q = query.lower()
-    exact = [row for row in rows if row["location_name"].lower() in q]
+    exact = [anchor for anchor in anchors if str(anchor["name"]).lower() in q]
     if exact:
-        return max(exact, key=lambda row: len(row["location_name"]))
+        return max(exact, key=lambda row: len(str(row["name"])))
     tokens = [token for token in re.findall(r"[a-zA-Z0-9]+", q) if len(token) >= 4]
-    for row in rows:
-        name = row["location_name"].lower()
+    for anchor in anchors:
+        name = str(anchor["name"]).lower()
         if any(token in name for token in tokens):
-            return row
+            return anchor
     return None
 
 
-def print_recommendations(query: str, rows: list[dict[str, str]]) -> None:
-    objective = objective_from_query(query)
-    ranked = sorted(rows, key=lambda row: score(row, objective), reverse=True)
-    print(f"Objective detected: {objective}")
-    print("Shortlist recommendation based on model predictions and campaign-fit signals.\n")
-    for idx, row in enumerate(ranked[:5], start=1):
-        print(f"{idx}. {row['location_name']}")
-        print_location_answer(row)
-        print()
-    print("Important: this assistant estimates early-stage exposure potential, not final campaign ROI.")
+def public_candidate(row: dict[str, Any]) -> dict[str, Any]:
+    runtime = row.get("runtime", {})
+    data_as_of = runtime.get("data_as_of")
+    data_age_days = None
+    if data_as_of:
+        try:
+            data_age_days = (date.today() - date.fromisoformat(data_as_of)).days
+        except ValueError:
+            data_age_days = None
+    policy_results = {}
+    for policy in ["strict", "balanced", "exploratory"]:
+        reasons = evidence_reasons(row, normalize_brief({"evidence_policy": policy}))
+        policy_results[policy] = {"passes": not reasons, "reasons": reasons}
+    strict_passes = policy_results["strict"]["passes"]
+    return {
+        "name": row["name"],
+        "lat": row["lat"],
+        "lon": row["lon"],
+        "predicted_weekly_passers": round(row["predicted_weekly_passers"]),
+        "prediction_low": round(row["prediction_low"]),
+        "prediction_high": round(row["prediction_high"]),
+        "interval_coverage": row["interval_coverage"],
+        "interval_method": row["interval_method"],
+        "interval_width_ratio": round(row["interval_width_ratio"], 3),
+        "retail_percentile": row["retail_percentile"],
+        "horeca_percentile": row["horeca_percentile"],
+        "transit_percentile": row["transit_percentile"],
+        "tourism_percentile": row["tourism_percentile"],
+        "similar_anchor_validation_error_pct": round(row["similar_anchor_validation_error"] * 100, 1),
+        "historical_spread_pct": round(row["comparable_anchor_variability"] * 100, 1),
+        "outside_feature_count": row["outside_feature_count"],
+        "feature_support_count": row["feature_support_count"],
+        "joint_feature_similarity_percentile": row["joint_feature_similarity_percentile"],
+        "shopping_area_name": row["shopping_area_name"] or None,
+        "evidence_policy_results": policy_results,
+        "evidence_interpretation": (
+            "Passes strict screening thresholds, but this does not mean the estimate is precise or buy-ready."
+            if strict_passes
+            else "Does not pass strict screening thresholds; inspect the listed evidence reasons before fieldwork."
+        ),
+        "comparable_anchors": [
+            {
+                "name": anchor["name"],
+                "weekly_passers": round(anchor["weekly_passers"]),
+                "feature_distance": round(anchor["feature_distance"], 3),
+                "reference_type": (
+                    "co_located_training_anchor" if anchor["geo_distance_m"] < 1 else "comparable_anchor"
+                ),
+            }
+            for anchor in row["comparable_anchors"]
+        ],
+        "runtime": runtime,
+        "data_freshness": {
+            "data_as_of": data_as_of,
+            "age_days": data_age_days,
+            "status": "historical_requires_current_check" if data_age_days is None or data_age_days > 365 else "recent",
+            "note": "Verify construction, route, and local-condition changes since the data date.",
+        },
+        "field_validation_priorities": [
+            "Run short pedestrian counts across relevant days and times.",
+            "Record approach direction, screen orientation, sight lines, and obstructions.",
+            "Observe dwell, crossing, queueing, and stopping behavior.",
+            "Check recent construction and public-transport route changes.",
+            "Join inventory, price/CPM, format, and audience data before purchase.",
+        ],
+        "boundary": (
+            "Early-stage Amsterdam screening estimate; not live traffic, campaign ROI, "
+            "inventory availability, price, demographics, or screen visibility."
+        ),
+    }
+
+
+def evaluate_anchor(anchor: dict[str, Any], bundle: dict[str, Any]) -> dict[str, Any]:
+    return evaluate_location(
+        float(anchor["lat"]),
+        float(anchor["lon"]),
+        str(anchor["name"]),
+        bundle=bundle,
+    )
+
+
+def run(query: str, candidate_name: str = "CLI candidate") -> dict[str, Any]:
+    bundle = load_runtime_bundle()
+    unsupported = unsupported_response(query, bundle)
+    if unsupported:
+        return unsupported
+    lat_lon = extract_lat_lon(query)
+    if lat_lon:
+        candidate = evaluate_location(lat_lon[0], lat_lon[1], candidate_name, bundle=bundle)
+        return {"kind": "location_evaluation", "candidate": public_candidate(candidate)}
+
+    anchor = find_anchor(query, bundle["anchors"])
+    asks_for_shortlist = bool(re.search(r"recommend|shortlist|rank|top |best candidate", query.lower()))
+    if anchor and not asks_for_shortlist:
+        candidate = evaluate_anchor(anchor, bundle)
+        return {"kind": "location_evaluation", "candidate": public_candidate(candidate)}
+
+    candidates = [evaluate_anchor(item, bundle) for item in bundle["anchors"]]
+    brief = parse_campaign_brief(query)
+    result = build_shortlist(candidates, brief)
+    return {
+        "kind": "campaign_shortlist",
+        "decision_status": "screening_only",
+        "boundary": "Shortlisted means priority for field validation, not a final media-buying recommendation.",
+        "candidate_universe": {
+            "type": "historical_training_anchors",
+            "count": len(candidates),
+            "is_live_zap_inventory": False,
+        },
+        "brief": result["brief"],
+        "selected": [public_candidate(row) for row in result["selected"]],
+        "field_validation_candidates": [public_candidate(row) for row in result["selected"]],
+        "eligible_count": len(result["eligible"]),
+        "excluded_count": len(result["excluded"]),
+        "excluded": [
+            {"name": item["candidate"]["name"], "reasons": item["reasons"]}
+            for item in result["excluded"]
+        ],
+        "runtime": bundle.get("runtime", {}),
+    }
+
+
+def print_human(result: dict[str, Any]) -> None:
+    if result["kind"] == "unsupported_decision":
+        print(result["boundary"])
+        print("Unsupported fields: " + ", ".join(result["unsupported_fields"]))
+        print("Missing inputs: " + "; ".join(result["missing_inputs"]))
+        return
+    if result["kind"] == "location_evaluation":
+        row = result["candidate"]
+        print(row["name"])
+        print(
+            f"Predicted typical weekly passers: {row['predicted_weekly_passers']:,} "
+            f"({row['prediction_low']:,}-{row['prediction_high']:,})"
+        )
+        print(
+            "Reliability evidence: "
+            f"similar-anchor error {row['similar_anchor_validation_error_pct']}%; "
+            f"historical spread {row['historical_spread_pct']}%; "
+            f"{row['outside_feature_count']} inputs outside range; "
+            f"joint similarity p{row['joint_feature_similarity_percentile']}."
+        )
+        print(row["boundary"])
+        return
+
+    brief = result["brief"]
+    print(
+        f"{brief['evidence_policy'].title()} {brief['objective']} shortlist "
+        f"({result['eligible_count']} eligible):"
+    )
+    for index, row in enumerate(result["selected"], start=1):
+        print(f"{index}. {row['name']}: {row['predicted_weekly_passers']:,} typical weekly passers")
+    print(result["boundary"])
 
 
 def main() -> None:
-    query = " ".join(sys.argv[1:]) or "Recommend 5 locations for a general campaign"
-    rows = read_csv(OUTPUT_TABLES / "site_predictions_weekly.csv")
-    lat_lon = extract_lat_lon(query)
-    if lat_lon:
-        result = evaluate_candidate("CLI candidate", lat_lon[0], lat_lon[1])
-        print_location_answer(result, "CLI candidate")
-        return
-    anchor = find_anchor(query, rows)
-    if anchor and not any(word in query.lower() for word in ["recommend", "shortlist", "top "]):
-        print_location_answer(anchor)
-        return
-    print_recommendations(query, rows)
+    parser = argparse.ArgumentParser(description="Evaluate Amsterdam OOH candidates with the versioned runtime bundle.")
+    parser.add_argument("query", nargs="*", help="Location question or campaign shortlist request")
+    parser.add_argument("--json", action="store_true", help="Return structured JSON")
+    parser.add_argument("--name", default="CLI candidate", help="Label for a coordinate evaluation")
+    args = parser.parse_args()
+    query = " ".join(args.query) or "Recommend a balanced top 5 exposure shortlist"
+    result = run(query, candidate_name=args.name)
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print_human(result)
 
 
 if __name__ == "__main__":

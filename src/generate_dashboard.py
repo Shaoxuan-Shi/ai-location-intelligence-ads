@@ -5,7 +5,17 @@ import math
 from typing import Any
 
 from build_features import load_horeca_points, load_osm_points
-from utils import APP_DIR, DATA_RAW, OUTPUT_TABLES, html_safe_json, quantile, read_csv, read_json, safe_float
+from utils import (
+    APP_DIR,
+    DATA_RAW,
+    OUTPUT_TABLES,
+    html_safe_json,
+    quantile,
+    read_csv,
+    read_json,
+    safe_float,
+    write_compact_json,
+)
 
 
 def compact_anchor(row: dict[str, str]) -> dict[str, object]:
@@ -150,6 +160,9 @@ def main() -> None:
     residuals = read_csv(OUTPUT_TABLES / "largest_residuals.csv")
     feature_rows = read_csv(OUTPUT_TABLES.parent.parent / "data" / "processed" / "site_features_weekly.csv")
     audit = read_csv(OUTPUT_TABLES.parent.parent / "data" / "processed" / "crowdmonitor_weekly_audit.csv")
+    audit_values = {row["metric"]: row["value"] for row in audit}
+    data_as_of = str(audit_values.get("last_week", "unknown"))[:10]
+    model_version = f"{artifact.get('model', 'footfall-model')}-{data_as_of}-v1"
     context = {
         "anchors": anchors,
         "pois": compact_pois(),
@@ -171,8 +184,16 @@ def main() -> None:
         "metrics": metrics[:6],
         "validationSummary": validation_summary,
         "residuals": residuals,
-        "audit": {row["metric"]: row["value"] for row in audit},
+        "audit": audit_values,
+        "runtime": {
+            "schema_version": "1.0.0",
+            "model_version": model_version,
+            "data_as_of": data_as_of,
+            "geography": "Amsterdam",
+            "target": "typical weekly pedestrian exposure",
+        },
     }
+    write_compact_json(OUTPUT_TABLES.parent / "runtime" / "runtime_bundle.json", context)
     html_template = r"""<!doctype html>
 <html lang="en">
 <head>

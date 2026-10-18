@@ -27,6 +27,7 @@ The result is a static interactive dashboard backed by a reproducible Python pip
 - [Methodology](docs/methodology.md)
 - [Model card](docs/model_card.md)
 - [Results and failure cases](docs/results_summary.md)
+- [Simulated usability test](docs/usability_test.md)
 
 When GitHub Pages is enabled, the repository root opens the live dashboard automatically through `index.html`.
 
@@ -63,19 +64,24 @@ The model is useful for relative screening and ranking, but it is not precise en
 - Filter and rank candidates for four campaign objectives and three evidence policies
 - Explain shortlist status, caution signals, comparable anchors, and model drivers
 - Keep all numerical answers grounded in deterministic model artifacts
+- Reuse the same versioned runtime through the Dashboard, JSON CLI, and repository skill
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    data["Public pedestrian and spatial data"] --> features["Reproducible location features"]
-    features --> model["Validated footfall model"]
-    model --> evidence["Prediction and reliability evidence"]
-    evidence --> rules["Campaign eligibility rules"]
-    rules --> shortlist["Field-validation shortlist"]
+    data["Public pedestrian and spatial data"] --> pipeline["Feature and model pipeline"]
+    pipeline --> bundle["Versioned runtime bundle"]
+    bundle --> core["Deterministic evaluation and shortlist core"]
+    core --> dashboard["Static Dashboard"]
+    core --> cli["JSON CLI"]
+    cli --> skill["Repository Skill / Codex Plugin"]
+    dashboard --> assistant["Bounded in-dashboard assistant"]
 ```
 
 The published dashboard is static: model coefficients, compact features, validation evidence, and product rules are bundled into the generated HTML. See the [architecture note](docs/architecture.md) for component responsibilities.
+
+Agent-facing integrations use `outputs/runtime/runtime_bundle.json`, a compact versioned copy of the same dashboard context. `src/agent_cli.py --json` provides a deterministic adapter, and `.agents/skills/zap-location-intelligence/` teaches an agent how to invoke it without duplicating model logic. Codex can discover the repository skill after cloning and opening the project; `.codex-plugin/plugin.json` also packages the same skill for installable-plugin workflows.
 
 ## Run locally
 
@@ -95,7 +101,18 @@ The core pipeline uses the Python standard library.
 make verify
 ```
 
-This compiles the Python source and runs unit tests for statistical helpers, geometry, coordinate boundaries, model artifacts, output schemas, prediction intervals, and published-dashboard contracts. GitHub Actions runs the same command on every push and pull request.
+This compiles the Python source and runs unit tests for statistical helpers, geometry, coordinate boundaries, model artifacts, output schemas, prediction intervals, browser/Python prediction parity, shortlist-rule parity, and published-dashboard contracts. GitHub Actions runs the same command on every push and pull request.
+
+## Use the deterministic agent interface
+
+```bash
+python3 src/agent_cli.py --json "Estimate 52.3731 4.8922"
+python3 src/agent_cli.py --json "Build a strict tourism top 3 shortlist"
+```
+
+These commands work from a fresh clone without downloading the raw-data cache. They return structured evidence for a bounded agent or skill; they do not call a language model.
+
+The CLI returns a structured `unsupported_decision` instead of a prediction for CPM, ROI, price, inventory, buying approval, live/hourly traffic, demographics, or screen-visibility requests. Built-in shortlist examples use historical training anchors, not live ZAP inventory.
 
 ## Rebuild the model
 
@@ -120,6 +137,9 @@ app/                 Current dashboard plus preserved product iterations
 data/processed/      Compact modeling tables
 docs/                Product, architecture, method, model, and results notes
 outputs/tables/      Model artifacts and experiment summaries
+outputs/runtime/     Compact versioned runtime bundle
+.agents/skills/      Auto-discovered repository skill for Codex
+.codex-plugin/       Installable Codex plugin manifest
 src/                 Data, feature, modeling, evaluation, and UI pipeline
 tests/               Core logic and repository-contract tests
 ```
