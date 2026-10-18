@@ -152,48 +152,57 @@ def feature_support_summary(anchors: list[dict[str, object]], artifact: dict[str
 
 
 def main() -> None:
-    anchors = [compact_anchor(row) for row in read_csv(OUTPUT_TABLES / "site_predictions_weekly.csv")]
-    anchors.sort(key=lambda row: row["rank"])
-    artifact = read_json(OUTPUT_TABLES / "model_artifact.json")
-    metrics = read_csv(OUTPUT_TABLES / "model_metrics.csv")
-    validation_summary = read_csv(OUTPUT_TABLES / "model_validation_summary.csv")
-    residuals = read_csv(OUTPUT_TABLES / "largest_residuals.csv")
-    feature_rows = read_csv(OUTPUT_TABLES.parent.parent / "data" / "processed" / "site_features_weekly.csv")
-    audit = read_csv(OUTPUT_TABLES.parent.parent / "data" / "processed" / "crowdmonitor_weekly_audit.csv")
-    audit_values = {row["metric"]: row["value"] for row in audit}
-    data_as_of = str(audit_values.get("last_week", "unknown"))[:10]
-    model_version = f"{artifact.get('model', 'footfall-model')}-{data_as_of}-v1"
-    context = {
-        "anchors": anchors,
-        "pois": compact_pois(),
-        "shoppingAreas": compact_shopping_areas(),
-        "model": {
-            "coefficients": artifact["coefficients"],
-            "features": artifact["features"],
-            "rmseLogFit": artifact["rmse_log_fit"],
-            "intervalLogMargin": artifact.get("interval_log_margin", artifact["rmse_log_fit"]),
-            "intervalMethod": artifact.get("interval_method", "log residual margin"),
-        },
-        "modelFeatureRanges": model_feature_ranges(feature_rows, artifact),
-        "evidenceRanges": {
-            "looError": numeric_range([safe_float(anchor["looPctError"]) for anchor in anchors]),
-            "variability": numeric_range([safe_float(anchor["variability"]) for anchor in anchors]),
-        },
-        "featureSupport": feature_support_summary(anchors, artifact),
-        "trainingValues": training_values(anchors),
-        "metrics": metrics[:6],
-        "validationSummary": validation_summary,
-        "residuals": residuals,
-        "audit": audit_values,
-        "runtime": {
-            "schema_version": "1.0.0",
-            "model_version": model_version,
-            "data_as_of": data_as_of,
-            "geography": "Amsterdam",
-            "target": "typical weekly pedestrian exposure",
-        },
-    }
-    write_compact_json(OUTPUT_TABLES.parent / "runtime" / "runtime_bundle.json", context)
+    runtime_path = OUTPUT_TABLES.parent / "runtime" / "runtime_bundle.json"
+    try:
+        pois = compact_pois()
+        shopping_areas = compact_shopping_areas()
+    except FileNotFoundError:
+        if not runtime_path.is_file():
+            raise
+        context = read_json(runtime_path)
+    else:
+        anchors = [compact_anchor(row) for row in read_csv(OUTPUT_TABLES / "site_predictions_weekly.csv")]
+        anchors.sort(key=lambda row: row["rank"])
+        artifact = read_json(OUTPUT_TABLES / "model_artifact.json")
+        metrics = read_csv(OUTPUT_TABLES / "model_metrics.csv")
+        validation_summary = read_csv(OUTPUT_TABLES / "model_validation_summary.csv")
+        residuals = read_csv(OUTPUT_TABLES / "largest_residuals.csv")
+        feature_rows = read_csv(OUTPUT_TABLES.parent.parent / "data" / "processed" / "site_features_weekly.csv")
+        audit = read_csv(OUTPUT_TABLES.parent.parent / "data" / "processed" / "crowdmonitor_weekly_audit.csv")
+        audit_values = {row["metric"]: row["value"] for row in audit}
+        data_as_of = str(audit_values.get("last_week", "unknown"))[:10]
+        model_version = f"{artifact.get('model', 'footfall-model')}-{data_as_of}-v1"
+        context = {
+            "anchors": anchors,
+            "pois": pois,
+            "shoppingAreas": shopping_areas,
+            "model": {
+                "coefficients": artifact["coefficients"],
+                "features": artifact["features"],
+                "rmseLogFit": artifact["rmse_log_fit"],
+                "intervalLogMargin": artifact.get("interval_log_margin", artifact["rmse_log_fit"]),
+                "intervalMethod": artifact.get("interval_method", "log residual margin"),
+            },
+            "modelFeatureRanges": model_feature_ranges(feature_rows, artifact),
+            "evidenceRanges": {
+                "looError": numeric_range([safe_float(anchor["looPctError"]) for anchor in anchors]),
+                "variability": numeric_range([safe_float(anchor["variability"]) for anchor in anchors]),
+            },
+            "featureSupport": feature_support_summary(anchors, artifact),
+            "trainingValues": training_values(anchors),
+            "metrics": metrics[:6],
+            "validationSummary": validation_summary,
+            "residuals": residuals,
+            "audit": audit_values,
+            "runtime": {
+                "schema_version": "1.0.0",
+                "model_version": model_version,
+                "data_as_of": data_as_of,
+                "geography": "Amsterdam",
+                "target": "typical weekly pedestrian exposure",
+            },
+        }
+        write_compact_json(runtime_path, context)
     html_template = r"""<!doctype html>
 <html lang="en">
 <head>
@@ -204,15 +213,18 @@ def main() -> None:
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css" integrity="sha384-Nq6PQ+9vJPvw7U/VfDELyrWoGQMsy0gi6QShhaSrGzkpF5KkM40csg2leky+YMTd" crossorigin="anonymous">
   <style>
     :root {
-      --bg: #f5f6f1;
+      --bg: #f2f6f4;
       --panel: #ffffff;
-      --ink: #1e2526;
-      --muted: #617071;
-      --line: #d8ddd4;
-      --accent: #0b7668;
-      --warning: #a35f13;
-      --risk: #a33c2f;
-      --soft: #e7f1ed;
+      --ink: #152321;
+      --muted: #65736f;
+      --line: #d8e1dd;
+      --accent: #0b7d70;
+      --accent-dark: #08645a;
+      --warning: #a86110;
+      --risk: #ae493c;
+      --soft: #e7f3ef;
+      --warning-soft: #fff2d6;
+      --risk-soft: #fbe8e5;
     }
     * { box-sizing: border-box; }
     body {
@@ -222,398 +234,387 @@ def main() -> None:
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       letter-spacing: 0;
     }
-    header {
-      padding: 16px 20px 12px;
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2, h3 { font-weight: 600; }
+    h1 { margin-bottom: 5px; font-size: clamp(24px, 2vw, 32px); letter-spacing: -0.025em; }
+    h2 { margin-bottom: 6px; font-size: 19px; }
+    h3 { margin-bottom: 7px; font-size: 15px; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app-header {
+      min-height: 70px;
+      display: grid;
+      grid-template-columns: minmax(270px, 1fr) auto minmax(270px, 1fr);
+      align-items: center;
+      gap: 20px;
+      padding: 0 24px;
       border-bottom: 1px solid var(--line);
       background: var(--panel);
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
     }
-    h1, h2, h3 { margin: 0; font-weight: 500; }
-    h1 { font-size: 23px; }
-    h2 { font-size: 18px; margin-bottom: 10px; }
-    h3 { font-size: 15px; margin-bottom: 8px; }
-    .subtitle { color: var(--muted); margin: 4px 0 0; font-size: 14px; }
-    .version-link {
-      color: var(--accent);
-      font-size: 12px;
-      text-decoration: none;
-      white-space: nowrap;
-      margin-top: 3px;
-    }
-    .version-link:hover, .version-link:focus-visible { text-decoration: underline; }
-    main {
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
       display: grid;
-      grid-template-columns: minmax(380px, 1fr) 470px;
-      min-height: calc(100vh - 74px);
+      place-items: center;
+      border-radius: 10px;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 700;
     }
-    #map { min-height: 720px; width: 100%; }
+    .brand strong { display: block; font-size: 15px; }
+    .brand span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .workspace-tabs { display: flex; align-self: stretch; gap: 28px; }
+    .workspace-tab {
+      width: auto;
+      border: 0;
+      border-bottom: 3px solid transparent;
+      padding: 0 3px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 600;
+    }
+    .workspace-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+    .header-meta { justify-self: end; color: var(--muted); font-size: 12px; text-align: right; }
+    .workspace { display: none; }
+    .workspace.active { display: block; }
+    .subtitle { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+    .eyebrow { margin-bottom: 7px; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    label { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      color: var(--ink);
+      background: var(--panel);
+    }
+    textarea { min-height: 78px; resize: vertical; }
+    .primary-button, .secondary-button, .text-button, .icon-button, .suggestion {
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 600;
+    }
+    .primary-button:hover { background: var(--accent-dark); }
+    .secondary-button { border-color: var(--line); color: var(--ink); background: var(--panel); }
+    .text-button { width: auto; border: 0; padding: 3px 0; color: var(--accent); background: transparent; }
+    .icon-button { width: 36px; min-width: 36px; padding: 7px; border-color: var(--line); color: var(--risk); background: var(--panel); font-size: 18px; line-height: 1; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .note { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .map-load-error {
       position: absolute;
       z-index: 1000;
       top: 12px;
       left: 50%;
       transform: translateX(-50%);
-      max-width: min(520px, calc(100% - 96px));
+      max-width: min(520px, calc(100% - 48px));
       padding: 9px 12px;
       border: 1px solid var(--warning);
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.96);
-      color: var(--ink);
-      font-size: 12px;
-      box-shadow: 0 4px 16px rgba(30, 37, 38, 0.12);
-    }
-    aside {
-      border-left: 1px solid var(--line);
-      background: var(--panel);
-      padding: 14px;
-      overflow: auto;
-      max-height: calc(100vh - 74px);
-    }
-    section {
-      border-bottom: 1px solid var(--line);
-      padding-bottom: 14px;
-      margin-bottom: 14px;
-    }
-    .inputs {
-      display: grid;
-      grid-template-columns: 1.1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    label {
-      display: grid;
-      gap: 5px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-    input, textarea, select, button {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 8px;
-      font: inherit;
-      color: var(--ink);
-      background: var(--panel);
-    }
-    textarea { min-height: 76px; resize: vertical; }
-    button {
-      cursor: pointer;
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-      font-weight: 500;
-    }
-    .ghost {
-      background: var(--panel);
-      color: var(--accent);
-    }
-    .button-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-    .builder-actions {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .brief-grid {
-      display: grid;
-      grid-template-columns: 1.25fr 1fr 76px;
-      gap: 8px;
-    }
-    .icon-button {
-      width: 34px;
-      min-width: 34px;
-      padding: 5px;
-      background: var(--panel);
-      color: var(--risk);
-      border-color: var(--line);
-      font-size: 18px;
-      line-height: 1;
-    }
-    .candidate-table { min-width: 760px; }
-    .candidate-table td:nth-child(2), .candidate-table th:nth-child(2) { text-align: right; }
-    .candidate-table td:last-child, .candidate-table th:last-child { width: 38px; text-align: right; }
-    .candidate-table tr { cursor: default; }
-    .candidate-table .candidate-row { cursor: pointer; }
-    .evidence-trigger {
-      width: auto;
-      border: 0;
-      padding: 0;
-      background: transparent;
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 600;
-      text-align: left;
-      text-decoration: underline;
-    }
-    .evidence-detail-row td {
-      padding: 0 8px 10px;
-      background: var(--bg);
-    }
-    .evidence-detail-row[hidden] { display: none; }
-    .evidence-detail {
-      padding: 8px 10px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.45;
-    }
-    .evidence-detail strong { color: var(--ink); }
-    .evidence-detail div + div { margin-top: 4px; }
-    .status-label { display: block; font-weight: 600; }
-    .status-shortlisted { color: var(--accent); }
-    .status-eligible { color: var(--warning); }
-    .status-excluded { color: var(--risk); }
-    .status-reason {
-      display: block;
-      min-width: 150px;
-      margin-top: 3px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.35;
-    }
-    .demo-action { margin-top: 7px; }
-    .demo-action[hidden] { display: none; }
-    .text-action {
-      width: auto;
-      border: 0;
-      padding: 0;
-      background: transparent;
-      color: var(--accent);
-      font-size: 12px;
-      text-decoration: underline;
-    }
-    .result-card {
-      border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px;
-      background: var(--bg);
-      margin-top: 10px;
-    }
-    .metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 10px 0;
-    }
-    .metric {
-      border-top: 1px solid var(--line);
-      padding-top: 8px;
-    }
-    .metric span {
-      display: block;
-      color: var(--muted);
+      color: var(--ink);
+      background: rgba(255, 255, 255, .96);
       font-size: 12px;
+      box-shadow: 0 8px 24px rgba(21, 35, 33, .12);
     }
-    .metric strong {
-      display: block;
-      margin-top: 2px;
-      font-size: 17px;
-      font-weight: 500;
-    }
-    .bars {
-      display: grid;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .bar-row {
-      display: grid;
-      grid-template-columns: 78px 1fr 42px;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-    }
-    .bar {
-      height: 8px;
-      background: #dfe8e3;
-      border-radius: 999px;
-      overflow: hidden;
-    }
+
+    /* Explore workspace */
+    .explore-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(430px, .92fr); min-height: calc(100vh - 70px); }
+    .explore-map { position: relative; min-height: 690px; border-right: 1px solid var(--line); }
+    #map { width: 100%; height: 100%; min-height: 690px; }
+    .explore-panel { padding: clamp(22px, 3vw, 44px); background: var(--panel); overflow: auto; }
+    .explore-panel-inner { width: min(600px, 100%); margin: 0 auto; }
+    .location-inputs { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 8px; margin: 22px 0 9px; }
+    .result-card { margin-top: 24px; }
+    .result-header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+    .result-header h2 { font-size: 24px; }
+    .estimate-block { margin: 22px 0 16px; }
+    .estimate-block strong { display: block; font-size: clamp(38px, 4vw, 52px); font-weight: 650; letter-spacing: -0.04em; }
+    .estimate-block span { color: var(--muted); font-size: 13px; }
+    .result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 18px; }
+    .result-actions button { width: 100%; }
+    details.evidence-details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+    details.evidence-details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+    .metrics, .evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+    .metric, .evidence { border-top: 1px solid var(--line); padding-top: 9px; }
+    .metric span, .evidence span { display: block; color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .metric strong, .evidence strong { display: block; margin: 3px 0; font-size: 16px; font-weight: 600; }
+    .bars { display: grid; gap: 8px; margin-top: 13px; }
+    .bar-row { display: grid; grid-template-columns: 74px 1fr 34px; align-items: center; gap: 8px; font-size: 12px; }
+    .bar { height: 7px; border-radius: 999px; overflow: hidden; background: #dfe9e5; }
     .bar span { display: block; height: 100%; background: var(--accent); }
-    .pill {
-      display: inline-block;
+    .pill, .reliability-badge, .status-label {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
       border-radius: 999px;
-      padding: 2px 7px;
-      font-size: 12px;
-      color: var(--accent);
+      padding: 5px 9px;
+      color: var(--accent-dark);
       background: var(--soft);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
     }
-    .answer {
-      white-space: pre-wrap;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
-      color: var(--ink);
-      font-size: 13px;
-      margin-top: 8px;
-      line-height: 1.45;
-    }
+    .reliability-badge.moderate, .status-eligible { color: var(--warning); background: var(--warning-soft); }
+    .reliability-badge.weak, .status-excluded { color: var(--risk); background: var(--risk-soft); }
+    .explore-message { min-height: 18px; margin-top: 9px; color: var(--accent); font-size: 12px; }
+
+    /* Shortlist workspace */
+    .shortlist-workspace { padding: 26px clamp(18px, 3vw, 42px) 30px; }
+    .shortlist-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 20px; }
+    .builder-actions { display: flex; align-items: center; gap: 8px; }
+    .builder-actions button { width: auto; }
+    .campaign-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .summary-card { min-height: 92px; padding: 17px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .summary-card span { display: block; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .summary-card strong { display: block; margin-top: 8px; font-size: 21px; font-weight: 650; }
+    .summary-card.emphasis strong { color: var(--accent); }
+    .shortlist-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); gap: 18px; align-items: start; }
+    .comparison-panel, .selected-panel { border: 1px solid var(--line); border-radius: 13px; background: var(--panel); overflow: hidden; }
+    .comparison-toolbar { display: grid; grid-template-columns: 1.25fr 1fr 110px; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+    .candidate-table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+    .candidate-table th { padding: 12px 13px; color: var(--muted); background: #f7faf8; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+    .candidate-table td { padding: 16px 13px; border-top: 1px solid var(--line); vertical-align: middle; }
+    .candidate-table .candidate-row { cursor: pointer; }
+    .candidate-table .candidate-row:hover, .candidate-table .candidate-row.selected { background: #f0f8f5; }
+    .candidate-table .candidate-row.selected td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+    .candidate-name { display: block; font-weight: 700; line-height: 1.25; }
+    .candidate-context { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .weekly-estimate { display: block; font-size: 18px; font-weight: 700; }
+    .weekly-unit { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .interval-visual { min-width: 110px; }
+    .interval-track { position: relative; height: 5px; margin: 4px 0 6px; border-radius: 99px; background: #dfe8e4; }
+    .interval-track span { position: absolute; top: -3px; left: 17%; width: 66%; height: 11px; border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+    .interval-track span::after { content: ''; position: absolute; top: 4px; left: 0; right: 0; height: 3px; background: #63aa9e; }
+    .interval-labels { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+    .status-shortlisted { color: var(--accent-dark); background: var(--soft); }
+    .candidate-status-stack { display: flex; flex-wrap: wrap; gap: 5px; }
+    .candidate-rank { color: var(--muted); font-weight: 700; }
+    .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+    .row-actions .text-button { color: var(--risk); font-size: 18px; }
+    .evidence-trigger { width: 30px; border: 0; padding: 4px; color: var(--muted); background: transparent; font-size: 18px; }
+    .evidence-detail-row td { padding: 0; background: #f8fbfa; }
+    .evidence-detail-row[hidden] { display: none; }
+    .evidence-detail { padding: 16px 22px 18px 74px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .evidence-detail strong { color: var(--ink); }
+    .evidence-detail div + div { margin-top: 5px; }
+    .comparison-empty { padding: 34px 20px; text-align: center; color: var(--muted); }
+    .demo-action { margin-top: 10px; }
+    .demo-action[hidden] { display: none; }
+    .comparison-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+    .selected-panel { position: sticky; top: 16px; }
+    .selected-panel-heading { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; }
+    .selected-panel-heading h2 { margin: 0; }
+    #shortlistMap { width: calc(100% - 32px); height: 245px; margin: 0 16px; border: 1px solid var(--line); border-radius: 11px; background: #eaf0ed; }
+    .selected-detail { padding: 18px; }
+    .selected-detail h2 { margin-bottom: 4px; font-size: 22px; }
+    .detail-coordinates { margin-bottom: 15px; color: var(--muted); font-size: 12px; }
+    .detail-estimate { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding-top: 15px; border-top: 1px solid var(--line); }
+    .detail-estimate strong { font-size: 34px; letter-spacing: -0.03em; }
+    .detail-estimate span { color: var(--muted); font-size: 11px; }
+    .detail-interval { margin: 2px 0 14px; color: var(--muted); font-size: 12px; }
+    .reliability-callout { display: flex; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 9px; color: var(--warning); background: var(--warning-soft); font-size: 12px; font-weight: 700; }
+    .contextual-agent { margin-top: 16px; padding: 15px; border: 1px solid #b9d9d2; border-radius: 11px; background: #f2f9f7; }
+    .contextual-agent h3 { margin-bottom: 5px; }
+    .assistant-scope { margin-bottom: 10px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .suggestion { width: auto; padding: 6px 8px; border-color: #b9d9d2; color: var(--accent-dark); background: var(--panel); font-size: 11px; text-align: left; }
+    .agent-input-row { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
+    .agent-input-row textarea { min-height: 70px; }
+    .agent-input-row button { width: 76px; }
+    .answer { white-space: pre-wrap; margin-top: 9px; padding: 10px; border-radius: 8px; color: var(--ink); background: var(--panel); font-size: 12px; line-height: 1.5; }
     .answer:empty { display: none; }
-    .assistant-scope {
-      color: var(--muted);
-      font-size: 12px;
-      margin: -3px 0 9px;
+    .screening-boundary { display: flex; gap: 12px; margin-top: 18px; padding: 15px 18px; border: 1px solid var(--line); border-radius: 12px; color: var(--muted); background: var(--panel); font-size: 12px; line-height: 1.5; }
+    .screening-boundary strong { color: var(--ink); }
+
+    /* Methodology workspace */
+    .methodology-workspace { padding: 28px clamp(18px, 4vw, 58px) 40px; }
+    .methodology-intro { margin-bottom: 22px; }
+    .methodology-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr); gap: 18px; align-items: start; }
+    .method-card { padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .anchor-table { max-height: 590px; overflow: auto; }
+    .method-card table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .method-card th, .method-card td { padding: 9px 7px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .method-card th { color: var(--muted); font-weight: 600; }
+    .method-card tr { cursor: pointer; }
+    .method-card tr:hover { background: var(--soft); }
+
+    @media (max-width: 1120px) {
+      .app-header { grid-template-columns: 1fr auto; }
+      .workspace-tabs { grid-column: 1 / -1; grid-row: 2; height: 46px; justify-self: start; }
+      .header-meta { display: none; }
+      .explore-layout { grid-template-columns: 1fr; }
+      .explore-map, #map { min-height: 470px; }
+      .shortlist-layout { grid-template-columns: 1fr; }
+      .selected-panel { position: static; display: grid; grid-template-columns: 360px 1fr; }
+      .selected-panel-heading { grid-column: 1 / -1; }
+      #shortlistMap { width: calc(100% - 16px); margin: 0 0 16px 16px; }
+      .campaign-summary { grid-template-columns: 1fr 1fr; }
     }
-    .suggestions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-    .suggestion {
-      width: auto;
-      padding: 6px 8px;
-      border-color: var(--line);
-      background: var(--panel);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 500;
-      text-align: left;
-    }
-    .suggestion:hover, .suggestion:focus-visible {
-      border-color: var(--accent);
-      background: var(--soft);
-    }
-    .evidence-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .evidence {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 9px;
-      background: var(--panel);
-    }
-    .evidence span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .evidence strong {
-      display: block;
-      margin-top: 2px;
-      font-size: 17px;
-      font-weight: 500;
-    }
-    .table-wrap { overflow-x: auto; }
-    .anchor-table { max-height: 360px; overflow: auto; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    th, td {
-      text-align: left;
-      border-bottom: 1px solid var(--line);
-      padding: 7px 5px;
-      vertical-align: top;
-    }
-    th { color: var(--muted); font-weight: 500; }
-    tr { cursor: pointer; }
-    tr.selected { background: var(--soft); }
-    .note { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
-    @media (max-width: 940px) {
-      main { grid-template-columns: 1fr; }
-      #map { min-height: 460px; }
-      aside { border-left: none; border-top: 1px solid var(--line); max-height: none; }
+    @media (max-width: 760px) {
+      .app-header { padding: 10px 14px 0; }
+      .brand span { display: none; }
+      .workspace-tabs { gap: 18px; overflow-x: auto; }
+      .explore-panel { padding: 22px 16px; }
+      .location-inputs { grid-template-columns: 1fr; }
+      .shortlist-workspace, .methodology-workspace { padding: 20px 12px 28px; }
+      .shortlist-heading { display: block; }
+      .builder-actions { margin-top: 14px; }
+      .campaign-summary { grid-template-columns: 1fr 1fr; }
+      .comparison-toolbar { grid-template-columns: 1fr 1fr; }
+      .comparison-toolbar label:last-child { grid-column: 1 / -1; }
+      .candidate-table th:nth-child(4), .candidate-table td:nth-child(4) { display: none; }
+      .candidate-table th, .candidate-table td { padding: 12px 8px; }
+      .selected-panel { display: block; }
+      #shortlistMap { width: calc(100% - 32px); margin: 0 16px; }
+      .methodology-grid { grid-template-columns: 1fr; }
+      .metrics, .evidence-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 520px) {
-      header { display: block; }
-      .version-link { display: inline-block; margin-top: 7px; }
-      .inputs, .button-row, .brief-grid, .metrics { grid-template-columns: 1fr; }
-      .builder-actions { grid-template-columns: 1fr auto; }
+      h1 { font-size: 24px; }
+      .campaign-summary { grid-template-columns: 1fr; }
+      .summary-card { min-height: 78px; }
+      .comparison-toolbar { grid-template-columns: 1fr; }
+      .comparison-toolbar label:last-child { grid-column: auto; }
+      .candidate-table th:nth-child(3), .candidate-table td:nth-child(3) { display: none; }
+      .candidate-name { font-size: 12px; }
+      .weekly-estimate { font-size: 15px; }
+      .evidence-detail { padding-left: 18px; }
+      .result-actions, .button-row, .agent-input-row { grid-template-columns: 1fr; }
+      .agent-input-row button { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Amsterdam AI Location Intelligence</h1>
-      <p class="subtitle">Evaluate, compare, and shortlist outdoor advertising candidate locations</p>
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">Z</div>
+      <div><strong>Amsterdam Location Intelligence</strong><span>OOH screening workspace</span></div>
     </div>
-    <a class="version-link" href="dashboard.html">Open V1 Location Assistant</a>
+    <nav class="workspace-tabs" aria-label="Dashboard workspaces">
+      <button class="workspace-tab" type="button" data-workspace="explore" aria-selected="true">Explore</button>
+      <button class="workspace-tab" type="button" data-workspace="shortlist" aria-selected="false">Shortlist</button>
+      <button class="workspace-tab" type="button" data-workspace="methodology" aria-selected="false">Methodology</button>
+    </nav>
+    <div class="header-meta">Screening support<br>not media-buying approval</div>
   </header>
+
   <main>
-    <div id="map" aria-label="Map of training anchors and custom candidate"></div>
-    <aside>
-      <section>
-        <h2>Location Evaluator</h2>
-        <div class="inputs">
-          <label>Name<input id="candidateName" value="Custom candidate"></label>
-          <label>Latitude<input id="latInput" value="52.370216"></label>
-          <label>Longitude<input id="lonInput" value="4.895168"></label>
+    <section id="workspace-explore" class="workspace active" data-workspace-panel="explore">
+      <div class="explore-layout">
+        <div class="explore-map"><div id="map" aria-label="Map of training anchors and custom candidate"></div></div>
+        <div class="explore-panel">
+          <div class="explore-panel-inner">
+            <p class="eyebrow">Explore</p>
+            <h1>Evaluate a candidate location</h1>
+            <p class="subtitle">Choose a point in Amsterdam, review the exposure estimate, then decide whether it belongs in the campaign workspace.</p>
+            <div class="location-inputs">
+              <label>Name<input id="candidateName" value="Custom candidate"></label>
+              <label>Latitude<input id="latInput" value="52.370216"></label>
+              <label>Longitude<input id="lonInput" value="4.895168"></label>
+            </div>
+            <div class="button-row">
+              <button class="primary-button" id="evaluateBtn">Evaluate location</button>
+              <button class="secondary-button" id="sampleBtn">Use Kalverstraat</button>
+            </div>
+            <p class="note">Clicking the map fills the coordinates. Supported area: latitude 52.30–52.43 and longitude 4.75–5.05.</p>
+            <div id="candidateResult" class="result-card"></div>
+            <div class="result-actions">
+              <button class="primary-button" id="saveCandidateBtn">Add to shortlist</button>
+              <button class="secondary-button" id="openShortlistBtn">Open shortlist</button>
+            </div>
+            <div id="exploreMessage" class="explore-message" aria-live="polite"></div>
+          </div>
         </div>
-        <div class="button-row">
-          <button id="evaluateBtn">Evaluate Location</button>
-          <button class="ghost" id="sampleBtn">Use Kalverstraat</button>
-        </div>
-        <p class="note">Use Amsterdam coordinates roughly within latitude 52.30-52.43 and longitude 4.75-5.05. Clicking the map fills the coordinates.</p>
-        <div id="candidateResult" class="result-card"></div>
-      </section>
-      <section>
-        <h2>Campaign Shortlist Builder</h2>
-        <p class="assistant-scope">Add candidate locations, define the campaign criteria, and identify which sites deserve field validation.</p>
+      </div>
+    </section>
+
+    <section id="workspace-shortlist" class="workspace shortlist-workspace" data-workspace-panel="shortlist">
+      <div class="shortlist-heading">
+        <div><p class="eyebrow">Decision workspace</p><h1>Campaign shortlist</h1><p class="subtitle">Compare candidate exposure, uncertainty, and evidence without leaving the decision view.</p></div>
         <div class="builder-actions">
-          <button id="saveCandidateBtn">Add Current Location</button>
+          <button class="secondary-button" id="sampleCandidatesBtn">Load demo candidates</button>
           <button class="icon-button" id="clearCandidatesBtn" title="Clear all candidate locations" aria-label="Clear all candidate locations">&times;</button>
         </div>
-        <div class="brief-grid">
-          <label>Primary objective<select id="campaignObjective">
-            <option value="exposure">Maximum weekly exposure</option>
-            <option value="tourism">Tourism awareness</option>
-            <option value="retail">Retail / high-street</option>
-            <option value="transit">Transit / commuter</option>
-          </select></label>
-          <label>Evidence policy<select id="evidencePolicy">
-            <option value="balanced">Balanced</option>
-            <option value="strict">Strict</option>
-            <option value="exploratory">Exploratory</option>
-          </select></label>
-          <label>Maximum shortlist size<input id="shortlistSize" type="number" min="1" max="8" value="3"></label>
+      </div>
+
+      <div class="campaign-summary" aria-label="Campaign summary">
+        <div class="summary-card"><span>Objective</span><strong id="summaryObjective">Maximum exposure</strong></div>
+        <div class="summary-card"><span>Evidence policy</span><strong id="summaryPolicy">Balanced</strong></div>
+        <div class="summary-card emphasis"><span>Selected</span><strong id="summarySelected">0 locations</strong></div>
+        <div class="summary-card"><span>Decision stage</span><strong>Field validation</strong></div>
+      </div>
+
+      <div class="shortlist-layout">
+        <div class="comparison-panel">
+          <div class="comparison-toolbar">
+            <label>Primary objective<select id="campaignObjective">
+              <option value="exposure">Maximum weekly exposure</option>
+              <option value="tourism">Tourism awareness</option>
+              <option value="retail">Retail / high-street</option>
+              <option value="transit">Transit / commuter</option>
+            </select></label>
+            <label>Evidence policy<select id="evidencePolicy">
+              <option value="balanced">Balanced</option>
+              <option value="strict">Strict</option>
+              <option value="exploratory">Exploratory</option>
+            </select></label>
+            <label>Shortlist size<input id="shortlistSize" type="number" min="1" max="8" value="3"></label>
+          </div>
+          <table class="candidate-table">
+            <colgroup><col style="width:7%"><col style="width:27%"><col style="width:16%"><col style="width:23%"><col style="width:18%"><col style="width:9%"></colgroup>
+            <thead><tr><th>#</th><th>Candidate</th><th>Weekly estimate</th><th>Approx. 80% interval</th><th>Reliability / status</th><th></th></tr></thead>
+            <tbody id="savedCandidates"></tbody>
+          </table>
+          <div id="comparisonEmpty" class="comparison-empty">
+            <strong>No candidates yet.</strong><br>Evaluate a location in Explore or load demo candidates to compare the workflow.
+            <div id="demoAction" class="demo-action"><button class="text-button" id="emptySampleCandidatesBtn">Try with demo locations</button></div>
+          </div>
+          <div class="comparison-footer"><p class="note" id="candidateWorkspaceNote"></p><button class="text-button" id="addAnotherCandidateBtn">＋ Add candidate</button></div>
         </div>
-        <p class="note" id="campaignRule"></p>
-        <p class="note" id="candidateWorkspaceNote"></p>
-        <div id="demoAction" class="demo-action"><button class="text-action" id="sampleCandidatesBtn">Try with demo locations</button></div>
-        <div class="table-wrap"><table class="candidate-table">
-          <thead><tr><th>Candidate</th><th>Weekly estimate</th><th>80% interval</th><th>Campaign fit</th><th>Evidence</th><th>Status</th><th></th></tr></thead>
-          <tbody id="savedCandidates"></tbody>
-        </table></div>
-      </section>
-      <section>
-        <h2>Ask the Shortlist Agent</h2>
-        <p class="assistant-scope">Ask why a site was selected or excluded, compare the leading candidates, or change the shortlist criteria.</p>
-        <div id="suggestions" class="suggestions" aria-label="Suggested questions"></div>
-        <textarea id="askInput" placeholder="For example: Why was this location excluded?"></textarea>
-        <button id="askBtn">Ask Agent</button>
-        <div id="answer" class="answer" aria-live="polite"></div>
-      </section>
-      <section>
-        <h2>Training Anchors</h2>
-        <p class="note" id="anchorValidationNote"></p>
-        <div class="table-wrap anchor-table"><table>
-          <thead><tr><th>Anchor</th><th>Observed</th><th>Held-out prediction</th><th title="Absolute percentage error when this anchor is excluded from training">Held-out error</th></tr></thead>
-          <tbody id="ranking"></tbody>
-        </table></div>
-      </section>
-      <section>
-        <h2>Model Validation</h2>
-        <p class="note" id="audit"></p>
-        <div id="validationSummary" class="evidence-grid"></div>
-        <table>
-          <thead><tr><th>Model</th><th>MAE</th><th>MAPE</th><th>RMSE log</th></tr></thead>
-          <tbody id="metrics"></tbody>
-        </table>
-        <p class="note" id="weakCases"></p>
-      </section>
-    </aside>
+
+        <aside class="selected-panel" aria-label="Selected candidate details">
+          <div class="selected-panel-heading"><h2>Selected location</h2><span class="pill" id="detailRank">No selection</span></div>
+          <div id="shortlistMap" aria-label="Map of selected shortlist location"></div>
+          <div class="selected-detail">
+            <p class="eyebrow" id="detailStatus">Add a candidate</p>
+            <h2 id="detailName">Nothing selected</h2>
+            <p class="detail-coordinates" id="detailCoordinates">Choose a row to inspect its evidence.</p>
+            <div class="detail-estimate"><strong id="detailEstimate">—</strong><span>estimated weekly passers</span></div>
+            <p class="detail-interval" id="detailInterval">Approx. 80% interval —</p>
+            <div class="reliability-callout"><span id="detailReliability">Reliability: —</span><span id="detailCaution">Evidence pending</span></div>
+            <div class="contextual-agent">
+              <h3>Contextual analyst</h3>
+              <p class="assistant-scope">Ask about this candidate or compare it with the current shortlist. Answers stay within available evidence.</p>
+              <div id="suggestions" class="suggestions" aria-label="Suggested questions"></div>
+              <div class="agent-input-row"><textarea id="askInput" placeholder="Why is uncertainty wide?"></textarea><button class="primary-button" id="askBtn">Ask</button></div>
+              <div id="answer" class="answer" aria-live="polite"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <p class="note" id="campaignRule"></p>
+      <div class="screening-boundary"><strong>ⓘ</strong><span><strong>This is a screening shortlist, not a buying recommendation.</strong> The built-in candidate universe contains historical training anchors—not live ZAP inventory. Validate visibility, availability, format, price, and placement constraints in the field.</span></div>
+    </section>
+
+    <section id="workspace-methodology" class="workspace methodology-workspace" data-workspace-panel="methodology">
+      <div class="methodology-intro"><p class="eyebrow">Evidence</p><h1>Methodology and model validation</h1><p class="subtitle">Technical evidence remains available without crowding the day-to-day location workflow.</p></div>
+      <div class="methodology-grid">
+        <div class="method-card">
+          <h2>Training anchors</h2><p class="note" id="anchorValidationNote"></p>
+          <div class="anchor-table"><table><thead><tr><th>Anchor</th><th>Observed</th><th>Held-out prediction</th><th title="Absolute percentage error when this anchor is excluded from training">Held-out error</th></tr></thead><tbody id="ranking"></tbody></table></div>
+        </div>
+        <div class="method-card">
+          <h2>Model validation</h2><p class="note" id="audit"></p>
+          <div id="validationSummary" class="evidence-grid"></div>
+          <table><thead><tr><th>Model</th><th>MAE</th><th>MAPE</th><th>RMSE log</th></tr></thead><tbody id="metrics"></tbody></table>
+          <p class="note" id="weakCases"></p>
+        </div>
+      </div>
+    </section>
   </main>
   <script id="dashboardContext" type="application/json">__CONTEXT__</script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
@@ -626,46 +627,50 @@ def main() -> None:
     const model = ctx.model;
     let current = null;
     let customMarker = null;
+    let shortlistMap = null;
+    let shortlistMarker = null;
+    let selectedCandidateKey = null;
     let savedCandidates = [];
     let lastAgentRun = null;
     const candidateStorageKey = 'amsterdam-location-agent-v2-candidates';
 
     const mapElement = document.getElementById('map');
-    function showMapNotice(message) {
+    function showMapNotice(message, target = mapElement) {
       const notice = document.createElement('div');
       notice.className = 'map-load-error';
       notice.textContent = message;
-      mapElement.appendChild(notice);
+      target.appendChild(notice);
     }
-    let map = null;
-    if (typeof L === 'object') {
-      map = L.map('map').setView([52.3676, 4.9041], 12);
-      const supportsWebGL = (() => {
-        try {
-          const canvas = document.createElement('canvas');
-          return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
-        } catch (error) {
-          return false;
-        }
-      })();
-      if (typeof L.maplibreGL === 'function' && supportsWebGL) {
-        try {
-          L.maplibreGL({
-            style: 'https://tiles.openfreemap.org/styles/positron'
-          }).addTo(map);
-          map.attributionControl.addAttribution(
+    function supportsWebGL() {
+      try {
+        const canvas = document.createElement('canvas');
+        return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+      } catch (error) {
+        return false;
+      }
+    }
+    function addBasemap(targetMap, noticeTarget) {
+      if (typeof L.maplibreGL !== 'function' || !supportsWebGL()) {
+        showMapNotice('The vector basemap is unavailable. Location markers and the evaluator remain available.', noticeTarget);
+        return;
+      }
+      try {
+        L.maplibreGL({style: 'https://tiles.openfreemap.org/styles/positron'}).addTo(targetMap);
+        if (targetMap.attributionControl) {
+          targetMap.attributionControl.addAttribution(
             '<a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a> | ' +
             '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> | ' +
             'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
           );
-        } catch (error) {
-          showMapNotice('The vector basemap could not start on this device. Location markers and the evaluator remain available.');
         }
-      } else if (!supportsWebGL) {
-        showMapNotice('The vector basemap needs WebGL, which is unavailable on this device. Location markers and the evaluator remain available.');
-      } else {
-        showMapNotice('The basemap library could not load. Check the internet connection and refresh; location markers remain available.');
+      } catch (error) {
+        showMapNotice('The vector basemap could not start. Location markers remain available.', noticeTarget);
       }
+    }
+    let map = null;
+    if (typeof L === 'object') {
+      map = L.map('map').setView([52.3676, 4.9041], 12);
+      addBasemap(map, mapElement);
     } else {
       showMapNotice('The map library could not load. The location evaluator and decision assistant remain available.');
     }
@@ -678,6 +683,37 @@ def main() -> None:
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+    }
+    function compactFmt(value) {
+      const numeric = Number(value) || 0;
+      if (numeric >= 1_000_000) return `${(numeric / 1_000_000).toFixed(numeric >= 10_000_000 ? 0 : 2).replace(/\.0+$/, '')}m`;
+      if (numeric >= 1_000) return `${Math.round(numeric / 1_000)}k`;
+      return fmt(numeric);
+    }
+    function ensureShortlistMap() {
+      if (shortlistMap || typeof L !== 'object') return;
+      const target = document.getElementById('shortlistMap');
+      shortlistMap = L.map(target, {zoomControl: true, attributionControl: false}).setView([52.3735, 4.895], 14);
+      addBasemap(shortlistMap, target);
+    }
+    function activateWorkspace(name) {
+      document.querySelectorAll('.workspace-tab').forEach(tab => {
+        tab.setAttribute('aria-selected', String(tab.dataset.workspace === name));
+      });
+      document.querySelectorAll('[data-workspace-panel]').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.workspacePanel === name);
+      });
+      requestAnimationFrame(() => {
+        if (name === 'explore' && map) map.invalidateSize();
+        if (name === 'shortlist') {
+          ensureShortlistMap();
+          if (shortlistMap) shortlistMap.invalidateSize();
+          const selected = savedCandidates.find(item => candidateKey(item) === selectedCandidateKey)
+            || lastAgentRun?.selected?.[0]
+            || savedCandidates[0];
+          if (selected) updateShortlistDetail(selected);
+        }
+      });
     }
     function log1p(value) { return Math.log1p(Math.max(Number(value) || 0, 0)); }
     function expm1(value) { return Math.max(Math.expm1(value), 0); }
@@ -873,23 +909,25 @@ def main() -> None:
     }
     function renderResult(result) {
       const area = result.shoppingArea || 'Outside official shopping area';
+      const reliability = reliabilityLevel(result);
       document.getElementById('candidateResult').innerHTML = `
-        <h3>${escapeHtml(result.name)}</h3>
-        <div class="metrics">
-          <div class="metric"><span>Predicted typical weekly passers</span><strong>${fmt(result.predicted)}</strong></div>
-          <div class="metric"><span>Approx. 80% prediction interval</span><strong>${fmt(result.low)}-${fmt(result.high)}</strong></div>
-          <div class="metric"><span>Nearest comparable anchor</span><strong>${escapeHtml(result.comparables[0]?.name || 'n/a')}</strong></div>
-          <div class="metric"><span>Shopping context</span><strong>${escapeHtml(area)}</strong></div>
-        </div>
-        <h3>Reliability Evidence</h3>
-        <div class="evidence-grid">
-          <div class="evidence"><span>Comparable-anchor support</span><strong>${result.comparables[0]?.featureDistance.toFixed(2) ?? 'n/a'} nearest feature distance</strong><span>${result.supportCount} anchor${result.supportCount === 1 ? '' : 's'} ${result.supportCount === 1 ? 'is' : 'are'} within the typical training-match threshold of ${ctx.featureSupport.typicalThreshold.toFixed(2)}. Closest is ${escapeHtml(result.comparables[0]?.name || 'n/a')}, ${Math.round(result.comparables[0]?.geoDistance || 0)}m away geographically.</span></div>
-          <div class="evidence"><span>Similar-anchor validation error</span><strong>${Math.round(result.comparableError * 100)}% average error</strong><span>The three matches missed their own held-out traffic by this amount. Training range: ${Math.round(ctx.evidenceRanges.looError.min * 100)}%-${Math.round(ctx.evidenceRanges.looError.max * 100)}%; lower strengthens local evidence.</span></div>
-          <div class="evidence"><span>Historical stability</span><strong>${Math.round(result.variability * 100)}% weekly spread</strong><span>Comparable anchors' middle 50% of weeks span this share of their median. Training range: ${Math.round(ctx.evidenceRanges.variability.min * 100)}%-${Math.round(ctx.evidenceRanges.variability.max * 100)}%; lower is more stable.</span></div>
-          <div class="evidence"><span>Training range check</span><strong>${result.outsideFeatureCount} of ${model.features.length} inputs outside range</strong><span>Joint feature similarity is stronger than ${Math.round(result.jointSimilarityPct)}% of training anchors' nearest matches. The most extreme single input is ${result.maxAbsZ.toFixed(2)} standard deviations from the training mean.</span></div>
-        </div>
+        <div class="result-header"><div><p class="eyebrow">Current candidate</p><h2>${escapeHtml(result.name)}</h2></div><span class="reliability-badge ${reliability.className}">${reliability.label} reliability</span></div>
+        <div class="estimate-block"><strong>${compactFmt(result.predicted)}</strong><span>estimated typical weekly passers · approximate 80% interval ${compactFmt(result.low)}–${compactFmt(result.high)}</span></div>
         <div class="bars">${bar('Retail', result.retailPct)}${bar('Horeca', result.horecaPct)}${bar('Transit', result.transitPct)}${bar('Tourism', result.tourismPct)}</div>
-        <p class="note">Comparable anchors: ${result.comparables.map(item => `${escapeHtml(item.name)} (${fmt(item.actual)}, ${Math.round(item.geoDistance)}m)`).join(', ')}</p>
+        <details class="evidence-details">
+          <summary>Reliability Evidence and comparable locations</summary>
+          <div class="metrics">
+            <div class="metric"><span>Nearest comparable anchor</span><strong>${escapeHtml(result.comparables[0]?.name || 'n/a')}</strong></div>
+            <div class="metric"><span>Shopping context</span><strong>${escapeHtml(area)}</strong></div>
+          </div>
+          <div class="evidence-grid">
+            <div class="evidence"><span>Comparable-anchor support</span><strong>${result.comparables[0]?.featureDistance.toFixed(2) ?? 'n/a'} feature distance</strong><span>${result.supportCount} anchor${result.supportCount === 1 ? '' : 's'} within the typical threshold of ${ctx.featureSupport.typicalThreshold.toFixed(2)}.</span></div>
+            <div class="evidence"><span>Similar-anchor validation error</span><strong>${Math.round(result.comparableError * 100)}% average error</strong><span>Average held-out miss among the three nearest feature matches.</span></div>
+            <div class="evidence"><span>Historical stability</span><strong>${Math.round(result.variability * 100)}% weekly spread</strong><span>Comparable anchors' middle 50% of historical weeks as a share of their median.</span></div>
+            <div class="evidence"><span>Training range check</span><strong>${result.outsideFeatureCount} of ${model.features.length} inputs outside range</strong><span>Joint similarity is stronger than ${Math.round(result.jointSimilarityPct)}% of training nearest matches.</span></div>
+          </div>
+          <p class="note">Comparable anchors: ${result.comparables.map(item => `${escapeHtml(item.name)} (${fmt(item.actual)}, ${Math.round(item.geoDistance)}m)`).join(', ')}</p>
+        </details>
       `;
     }
     function placeCustomMarker(result) {
@@ -906,14 +944,14 @@ def main() -> None:
       const lon = Number(document.getElementById('lonInput').value);
       const name = document.getElementById('candidateName').value || 'Custom candidate';
       if (!isSupportedCoordinate(lat, lon)) {
-        document.getElementById('answer').textContent = 'Enter a coordinate inside the supported Amsterdam area: latitude 52.30-52.43 and longitude 4.75-5.05.';
+        document.getElementById('exploreMessage').textContent = 'Enter a coordinate inside the supported Amsterdam area: latitude 52.30–52.43 and longitude 4.75–5.05.';
         return;
       }
       const result = evaluate(lat, lon, name);
       renderResult(result);
       placeCustomMarker(result);
       renderSuggestions(result);
-      document.getElementById('answer').textContent = '';
+      document.getElementById('exploreMessage').textContent = '';
     }
     const featureMeta = {
       shop_count_80m: {label: 'Nearby retail', value: row => `${row.retail} shops within 80m`},
@@ -991,6 +1029,12 @@ def main() -> None:
     function reliabilityFlags(row) {
       return reliabilityFlagDetails(row).map(item => item.label);
     }
+    function reliabilityLevel(row) {
+      const cautionCount = reliabilityFlagDetails(row).length;
+      if (cautionCount === 0) return {label: 'Strong', className: 'strong', caution: 'No caution threshold triggered'};
+      if (cautionCount <= 2) return {label: 'Moderate', className: 'moderate', caution: `${cautionCount} caution signal${cautionCount === 1 ? '' : 's'}`};
+      return {label: 'Weak', className: 'weak', caution: `${cautionCount} caution signals`};
+    }
     function candidateKey(row) {
       return `${Number(row.lat).toFixed(6)},${Number(row.lon).toFixed(6)}`;
     }
@@ -1023,70 +1067,131 @@ def main() -> None:
       }
       return flags.map(item => `<div><strong>${escapeHtml(item.label.charAt(0).toUpperCase() + item.label.slice(1))}:</strong> ${escapeHtml(item.detail)}</div>`).join('');
     }
+    function updateShortlistDetail(row) {
+      if (!row) return;
+      selectedCandidateKey = candidateKey(row);
+      current = candidateSnapshot(row);
+      const ordered = rankCandidates(savedCandidates);
+      const index = ordered.findIndex(item => candidateKey(item) === selectedCandidateKey);
+      const selectedIndex = lastAgentRun?.selected.findIndex(item => candidateKey(item) === selectedCandidateKey) ?? -1;
+      const isEligible = Boolean(lastAgentRun?.eligible.some(item => candidateKey(item) === selectedCandidateKey));
+      const status = selectedIndex >= 0 ? 'Shortlisted' : isEligible ? 'Eligible' : 'Excluded';
+      const reliability = reliabilityLevel(row);
+      const caution = reliabilityFlagDetails(row)[0]?.label || 'No caution threshold triggered';
+      document.getElementById('detailRank').textContent = selectedIndex >= 0 ? `Rank #${selectedIndex + 1}` : index >= 0 ? `Candidate #${index + 1}` : status;
+      document.getElementById('detailStatus').textContent = status;
+      document.getElementById('detailName').textContent = row.name;
+      document.getElementById('detailCoordinates').textContent = `${Number(row.lat).toFixed(4)}, ${Number(row.lon).toFixed(4)}${row.shoppingArea ? ` · ${row.shoppingArea}` : ' · Amsterdam'}`;
+      document.getElementById('detailEstimate').textContent = compactFmt(row.predicted);
+      document.getElementById('detailInterval').textContent = `Approx. 80% interval ${compactFmt(row.low)}–${compactFmt(row.high)}`;
+      document.getElementById('detailReliability').textContent = `Reliability: ${reliability.label}`;
+      document.getElementById('detailCaution').textContent = caution;
+      document.getElementById('candidateName').value = row.name;
+      document.getElementById('latInput').value = Number(row.lat).toFixed(6);
+      document.getElementById('lonInput').value = Number(row.lon).toFixed(6);
+      document.querySelectorAll('#savedCandidates .candidate-row').forEach(element => {
+        element.classList.toggle('selected', element.dataset.key === selectedCandidateKey);
+      });
+      ensureShortlistMap();
+      if (shortlistMap && typeof L === 'object') {
+        if (shortlistMarker) shortlistMarker.remove();
+        shortlistMarker = L.marker([row.lat, row.lon]).addTo(shortlistMap);
+        shortlistMarker.bindPopup(`<strong>${escapeHtml(row.name)}</strong><br>${fmt(row.predicted)} estimated weekly passers`).openPopup();
+        shortlistMap.setView([row.lat, row.lon], 15);
+      }
+      renderSuggestions(row);
+    }
+    function clearShortlistDetail() {
+      selectedCandidateKey = null;
+      document.getElementById('detailRank').textContent = 'No selection';
+      document.getElementById('detailStatus').textContent = 'Add a candidate';
+      document.getElementById('detailName').textContent = 'Nothing selected';
+      document.getElementById('detailCoordinates').textContent = 'Choose a row to inspect its evidence.';
+      document.getElementById('detailEstimate').textContent = '—';
+      document.getElementById('detailInterval').textContent = 'Approx. 80% interval —';
+      document.getElementById('detailReliability').textContent = 'Reliability: —';
+      document.getElementById('detailCaution').textContent = 'Evidence pending';
+      document.getElementById('suggestions').innerHTML = '';
+    }
     function renderCandidateWorkspace() {
       const body = document.getElementById('savedCandidates');
-      const demoAction = document.getElementById('demoAction');
-      demoAction.hidden = savedCandidates.length > 0;
+      const table = document.querySelector('.candidate-table');
+      const empty = document.getElementById('comparisonEmpty');
+      const objectiveSummaryLabels = {
+        exposure: 'Maximum exposure',
+        tourism: 'Tourism',
+        retail: 'Retail / high-street',
+        transit: 'Transit / commuter'
+      };
+      document.getElementById('summaryObjective').textContent = objectiveSummaryLabels[campaignBrief().objective];
+      document.getElementById('summaryPolicy').textContent = campaignBrief().evidencePolicy.charAt(0).toUpperCase() + campaignBrief().evidencePolicy.slice(1);
       if (!savedCandidates.length) {
         lastAgentRun = null;
-        document.getElementById('candidateWorkspaceNote').textContent = 'No candidate locations yet. Evaluate a location above, then add it here.';
         body.innerHTML = '';
+        table.hidden = true;
+        empty.hidden = false;
+        document.getElementById('summarySelected').textContent = '0 locations';
+        document.getElementById('candidateWorkspaceNote').textContent = 'No candidate locations yet.';
+        clearShortlistDetail();
         return;
       }
+      table.hidden = false;
+      empty.hidden = true;
       lastAgentRun = buildShortlist(campaignBrief());
       const selectedKeys = new Set(lastAgentRun.selected.map(candidateKey));
       const eligibleKeys = new Set(lastAgentRun.eligible.map(candidateKey));
       const exclusionLookup = new Map(lastAgentRun.excluded.map(item => [candidateKey(item.candidate), item.reasons]));
       const ordered = rankCandidates(savedCandidates);
-      document.getElementById('candidateWorkspaceNote').textContent = `${savedCandidates.length} candidate${savedCandidates.length === 1 ? '' : 's'} ranked by predicted weekly exposure. ${lastAgentRun.selected.length} of up to ${lastAgentRun.brief.shortlistSize} shortlisted for field validation. ${lastAgentRun.eligible.length} passed the current campaign criteria; ${lastAgentRun.excluded.length} excluded.`;
+      if (!ordered.some(item => candidateKey(item) === selectedCandidateKey)) {
+        selectedCandidateKey = candidateKey(lastAgentRun.selected[0] || ordered[0]);
+      }
+      document.getElementById('summarySelected').textContent = `${lastAgentRun.selected.length} location${lastAgentRun.selected.length === 1 ? '' : 's'}`;
+      document.getElementById('candidateWorkspaceNote').textContent = `${lastAgentRun.eligible.length} eligible · ${lastAgentRun.excluded.length} excluded · ranked by predicted weekly exposure`;
       body.innerHTML = ordered.map((row, index) => {
         const key = candidateKey(row);
-        const isSelected = selectedKeys.has(key);
+        const isShortlisted = selectedKeys.has(key);
         const isEligible = eligibleKeys.has(key);
-        const status = isSelected ? 'Shortlisted' : isEligible ? 'Eligible' : 'Excluded';
-        const statusClass = isSelected ? 'status-shortlisted' : isEligible ? 'status-eligible' : 'status-excluded';
-        const reason = isSelected
-          ? 'Top eligible site for field validation.'
+        const status = isShortlisted ? 'Shortlisted' : isEligible ? 'Eligible' : 'Excluded';
+        const statusClass = isShortlisted ? 'status-shortlisted' : isEligible ? 'status-eligible' : 'status-excluded';
+        const reason = isShortlisted
+          ? `Ranks ${lastAgentRun.selected.findIndex(item => candidateKey(item) === key) + 1} among eligible sites by predicted exposure.`
           : isEligible
-            ? 'Passed the criteria but falls below the shortlist cutoff.'
+            ? 'Passes the criteria but falls below the shortlist cutoff.'
             : (exclusionLookup.get(key) || ['Does not meet the current criteria.']).join('; ');
-        const evidenceLabel = evidenceSummary(row);
+        const reliability = reliabilityLevel(row);
         return `
-        <tr class="candidate-row" data-key="${candidateKey(row)}">
-          <td><strong>${index + 1}. ${escapeHtml(row.name)}</strong></td>
-          <td>${fmt(row.predicted)}</td>
-          <td>${fmt(row.low)}-${fmt(row.high)}</td>
-          <td>${escapeHtml(campaignFitText(row, lastAgentRun.brief.objective))}</td>
-          <td><button class="evidence-trigger" data-key="${candidateKey(row)}" aria-expanded="false">${escapeHtml(evidenceLabel)}</button></td>
-          <td><span class="status-label ${statusClass}">${status}</span><span class="status-reason">${escapeHtml(reason)}</span></td>
-          <td><button class="icon-button remove-candidate" data-key="${candidateKey(row)}" title="Remove ${escapeHtml(row.name)}" aria-label="Remove ${escapeHtml(row.name)}">&times;</button></td>
+        <tr class="candidate-row ${key === selectedCandidateKey ? 'selected' : ''}" data-key="${key}" tabindex="0" aria-label="Inspect ${escapeHtml(row.name)}">
+          <td><span class="candidate-rank">${index + 1}</span></td>
+          <td><span class="candidate-name">${escapeHtml(row.name)}</span><span class="candidate-context">${escapeHtml(campaignFitText(row, lastAgentRun.brief.objective))}</span></td>
+          <td><span class="weekly-estimate">${compactFmt(row.predicted)}</span><span class="weekly-unit">weekly passers</span></td>
+          <td><div class="interval-visual"><div class="interval-track"><span></span></div><div class="interval-labels"><span>${compactFmt(row.low)}</span><span>${compactFmt(row.high)}</span></div></div></td>
+          <td><div class="candidate-status-stack"><span class="reliability-badge ${reliability.className}">${reliability.label}</span><span class="status-label ${statusClass}">${status}</span></div></td>
+          <td><div class="row-actions"><button class="evidence-trigger" data-key="${key}" aria-expanded="false" title="Show evidence" aria-label="Show evidence for ${escapeHtml(row.name)}">⌄</button><button class="text-button remove-candidate" data-key="${key}" title="Remove ${escapeHtml(row.name)}" aria-label="Remove ${escapeHtml(row.name)}">×</button></div></td>
         </tr>
-        <tr class="evidence-detail-row" data-key="${candidateKey(row)}" hidden>
-          <td colspan="7"><div class="evidence-detail">${evidenceDetailHtml(row)}</div></td>
+        <tr class="evidence-detail-row" data-key="${key}" hidden>
+          <td colspan="6"><div class="evidence-detail"><div><strong>Why this status:</strong> ${escapeHtml(reason)}</div>${evidenceDetailHtml(row)}</div></td>
         </tr>
       `}).join('');
       body.querySelectorAll('.candidate-row').forEach(rowElement => {
         rowElement.addEventListener('click', event => {
-          if (event.target.closest('.remove-candidate')) return;
+          if (event.target.closest('button')) return;
           const candidate = savedCandidates.find(item => candidateKey(item) === rowElement.dataset.key);
-          if (!candidate) return;
-          current = candidateSnapshot(candidate);
-          document.getElementById('candidateName').value = current.name;
-          document.getElementById('latInput').value = Number(current.lat).toFixed(6);
-          document.getElementById('lonInput').value = Number(current.lon).toFixed(6);
-          renderResult(current);
-          placeCustomMarker(current);
-          renderSuggestions(current);
-          document.getElementById('answer').textContent = '';
+          if (candidate) updateShortlistDetail(candidate);
+        });
+        rowElement.addEventListener('keydown', event => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          const candidate = savedCandidates.find(item => candidateKey(item) === rowElement.dataset.key);
+          if (candidate) updateShortlistDetail(candidate);
         });
       });
       body.querySelectorAll('.remove-candidate').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', event => {
+          event.stopPropagation();
           savedCandidates = savedCandidates.filter(item => candidateKey(item) !== button.dataset.key);
           lastAgentRun = null;
           persistCandidates();
           renderCandidateWorkspace();
-          if (current) renderSuggestions(current);
         });
       });
       body.querySelectorAll('.evidence-trigger').forEach(button => {
@@ -1097,8 +1202,11 @@ def main() -> None:
           const willOpen = detailRow.hidden;
           detailRow.hidden = !willOpen;
           button.setAttribute('aria-expanded', String(willOpen));
+          button.textContent = willOpen ? '⌃' : '⌄';
         });
       });
+      const selected = savedCandidates.find(item => candidateKey(item) === selectedCandidateKey) || ordered[0];
+      updateShortlistDetail(selected);
     }
     function saveCurrentCandidate() {
       if (!current) runEvaluation();
@@ -1722,6 +1830,7 @@ def main() -> None:
         row.addEventListener('click', () => {
           const anchor = anchors[Number(row.dataset.anchorIndex)];
           if (!anchor) return;
+          activateWorkspace('explore');
           document.getElementById('candidateName').value = anchor.name;
           document.getElementById('latInput').value = anchor.lat;
           document.getElementById('lonInput').value = anchor.lon;
@@ -1757,6 +1866,9 @@ def main() -> None:
         runEvaluation();
       });
     }
+    document.querySelectorAll('.workspace-tab').forEach(tab => {
+      tab.addEventListener('click', () => activateWorkspace(tab.dataset.workspace));
+    });
     document.getElementById('evaluateBtn').addEventListener('click', runEvaluation);
     document.getElementById('sampleBtn').addEventListener('click', () => {
       const sample = anchors.find(item => item.name.includes('Kalverstraat')) || anchors[0];
@@ -1766,21 +1878,25 @@ def main() -> None:
       runEvaluation();
     });
     document.getElementById('saveCandidateBtn').addEventListener('click', () => {
-      document.getElementById('answer').textContent = saveCurrentCandidate();
+      document.getElementById('exploreMessage').textContent = saveCurrentCandidate();
       renderSuggestions(current);
     });
-    document.getElementById('sampleCandidatesBtn').addEventListener('click', () => {
-      document.getElementById('answer').textContent = loadSampleCandidates();
+    function loadDemosAndOpenShortlist() {
+      loadSampleCandidates();
+      activateWorkspace('shortlist');
       renderSuggestions(current);
-    });
+    }
+    document.getElementById('sampleCandidatesBtn').addEventListener('click', loadDemosAndOpenShortlist);
+    document.getElementById('emptySampleCandidatesBtn').addEventListener('click', loadDemosAndOpenShortlist);
     document.getElementById('clearCandidatesBtn').addEventListener('click', () => {
       savedCandidates = [];
       lastAgentRun = null;
       persistCandidates();
       renderCandidateWorkspace();
-      renderSuggestions(current);
       document.getElementById('answer').textContent = 'Cleared all candidate locations.';
     });
+    document.getElementById('openShortlistBtn').addEventListener('click', () => activateWorkspace('shortlist'));
+    document.getElementById('addAnotherCandidateBtn').addEventListener('click', () => activateWorkspace('explore'));
     ['campaignObjective', 'evidencePolicy'].forEach(id => {
       document.getElementById(id).addEventListener('change', () => {
         lastAgentRun = null;
@@ -1801,11 +1917,11 @@ def main() -> None:
         runAgent();
       }
     });
+    runEvaluation();
     restoreCandidates();
     renderCandidateWorkspace();
     renderCampaignRule();
     renderTables();
-    runEvaluation();
   </script>
 </body>
 </html>

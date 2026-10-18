@@ -47,11 +47,26 @@ class RepositoryContractTests(unittest.TestCase):
         html = (ROOT / "app" / "dashboard_agent.html").read_text(encoding="utf-8")
         for phrase in [
             "Reliability Evidence",
-            "Campaign Shortlist Builder",
+            "Campaign shortlist",
             "field validation",
             "I cannot access inventory price",
         ]:
             self.assertIn(phrase, html)
+
+    def test_published_dashboard_has_workspace_navigation_and_decision_layout(self) -> None:
+        html = (ROOT / "app" / "dashboard_agent.html").read_text(encoding="utf-8")
+        for contract in [
+            'data-workspace="explore"',
+            'data-workspace="shortlist"',
+            'data-workspace="methodology"',
+            'id="shortlistMap"',
+            'id="detailName"',
+            'class="contextual-agent"',
+            'class="candidate-table"',
+            "This is a screening shortlist, not a buying recommendation.",
+        ]:
+            self.assertIn(contract, html)
+        self.assertNotIn(".candidate-table { min-width: 760px", html)
 
     def test_candidate_name_is_escaped_in_html_sinks(self) -> None:
         files = [
@@ -68,7 +83,7 @@ class RepositoryContractTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for pattern in unsafe_patterns:
                 self.assertNotIn(pattern, text, str(path))
-            self.assertIn("<h3>${escapeHtml(result.name)}</h3>", text, str(path))
+            self.assertIn("${escapeHtml(result.name)}", text, str(path))
 
     def test_anchor_names_are_escaped_in_html_sinks(self) -> None:
         files = [
