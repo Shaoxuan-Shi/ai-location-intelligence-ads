@@ -6,7 +6,13 @@ _Evidence-based site screening and campaign shortlisting for outdoor advertising
 
 ### [Launch the interactive dashboard →](https://shaoxuan-shi.github.io/ai-location-intelligence-ads/)
 
-![V2 dashboard with candidate ranking and shortlist agent](docs/images/dashboard-v2.jpg)
+### Explore and evaluate a candidate location
+
+![Explore workspace showing the Amsterdam map, candidate exposure estimate, uncertainty interval, and reliability evidence](docs/images/dashboard-explore.png)
+
+### Compare and shortlist campaign locations
+
+![Shortlist workspace comparing candidate exposure, uncertainty, eligibility, and the selected-location evidence panel](docs/images/dashboard-shortlist.png)
 
 ## In 30 seconds
 
