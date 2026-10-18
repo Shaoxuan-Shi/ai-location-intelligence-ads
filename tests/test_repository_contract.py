@@ -13,6 +13,7 @@ class RepositoryContractTests(unittest.TestCase):
     def test_dashboard_and_model_artifact_exist(self) -> None:
         self.assertTrue((ROOT / "app" / "dashboard_agent.html").is_file())
         self.assertTrue((ROOT / "outputs" / "tables" / "model_artifact.json").is_file())
+        self.assertTrue((ROOT / "outputs" / "runtime" / "runtime_bundle.json").is_file())
 
     def test_model_artifact_has_required_fields(self) -> None:
         artifact = json.loads((ROOT / "outputs" / "tables" / "model_artifact.json").read_text())
@@ -106,6 +107,29 @@ class RepositoryContractTests(unittest.TestCase):
         source = (ROOT / "src" / "fetch_data.py").read_text(encoding="utf-8")
         self.assertNotIn("ROOT.parent", source)
         self.assertNotIn("Intern_Assignment", source)
+
+    def test_cli_uses_shared_shortlist_contract(self) -> None:
+        source = (ROOT / "src" / "agent_cli.py").read_text(encoding="utf-8")
+        self.assertIn("from shortlist import build_shortlist", source)
+        self.assertNotIn("def score(", source)
+        self.assertNotIn("predicted * (", source)
+
+    def test_repository_skill_has_required_contract_files(self) -> None:
+        skill = ROOT / ".agents" / "skills" / "zap-location-intelligence"
+        skill_text = (skill / "SKILL.md").read_text(encoding="utf-8")
+        self.assertTrue(skill_text.startswith("---\nname: zap-location-intelligence\n"))
+        self.assertIn("description:", skill_text.split("---", 2)[1])
+        self.assertNotIn("TODO", skill_text)
+        self.assertTrue((skill / "references" / "tool-contract.md").is_file())
+        metadata = (skill / "agents" / "openai.yaml").read_text(encoding="utf-8")
+        self.assertIn('display_name: "ZAP Location Intelligence"', metadata)
+        self.assertIn("$zap-location-intelligence", metadata)
+
+    def test_plugin_manifest_points_to_repo_skill(self) -> None:
+        manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["name"], "ai-location-intelligence-ads")
+        self.assertEqual(manifest["skills"], "./.agents/skills/")
+        self.assertTrue((ROOT / ".agents" / "skills" / "zap-location-intelligence" / "SKILL.md").is_file())
 
 
 if __name__ == "__main__":

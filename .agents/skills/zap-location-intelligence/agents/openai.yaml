@@ -1,0 +1,4 @@
+interface:
+  display_name: "ZAP Location Intelligence"
+  short_description: "Evaluate and shortlist Amsterdam OOH locations"
+  default_prompt: "Use $zap-location-intelligence to evaluate an Amsterdam OOH location and explain the evidence."

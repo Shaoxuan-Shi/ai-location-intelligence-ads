@@ -63,3 +63,5 @@ Those outputs require additional data sources and cannot be inferred from the cu
 ## Future Language-Model Planner
 
 A language model may later replace the deterministic intent parser for more flexible phrasing and clarification questions. It should receive only the registered tool schemas and structured tool outputs. All numerical claims must remain grounded in deterministic tools, with user confirmation before any external or irreversible action.
+
+The repository skill follows this boundary today: it calls `src/agent_cli.py --json`, treats the returned structure as the sole source for numerical claims, and does not copy model or shortlist logic into its instructions.
